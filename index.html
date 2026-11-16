@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armá tu pedido · SIO GLOBAL</title>
+<meta name="description" content="Simulá tu pedido con los precios y descuentos de SIO GLOBAL y mandalo por WhatsApp.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" href="assets/logo_cabecera.png">
+<style>
+@font-face{font-family:Mulish;src:url(assets/Mulish-Regular.ttf) format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:Mulish;src:url(assets/Mulish-Bold.ttf) format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:Mulish;src:url(assets/Mulish-Black.ttf) format("truetype");font-weight:900;font-display:swap}
+:root{
+  --negro:#000;--blanco:#fff;--fondo:#F5F5F5;--linea:#D9D9D9;--gris:#6B6B6B;--gris-claro:#9A9A9A;
+  --rojo:#E60000;--amarillo:#FFD700;--verde-wa:#25D366;--verde:#1E8449;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Mulish,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--blanco);color:var(--negro);
+  min-height:100vh;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+body::before{content:"";position:fixed;inset:0;background:url(assets/marca_agua.png) center 55%/min(88vw,560px) auto no-repeat;opacity:.55;pointer-events:none;z-index:-1}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit}
+.envoltura{max-width:760px;margin:0 auto;padding:0 16px}
+
+/* Cabecera */
+header.cab{background:var(--negro);color:var(--blanco)}
+.cab .envoltura{display:flex;align-items:center;gap:14px;padding-top:12px;padding-bottom:12px}
+.cab img{height:46px;width:auto;flex:none}
+.cab h1{font-weight:900;font-size:21px;line-height:1.05;letter-spacing:.2px}
+.cab h1 span{color:var(--amarillo)}
+.cab p{font-size:12.5px;color:#CFCFCF;margin-top:4px}
+.cab p b{color:var(--blanco)}
+
+/* Buscador + proveedores (fijo arriba) */
+.barra{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--blanco);border-bottom:1px solid var(--linea)}
+.barra .envoltura{padding-top:10px;padding-bottom:8px}
+.buscar{width:100%;border:1.5px solid var(--negro);border-radius:22px;padding:10px 16px;font-size:16px;background:var(--blanco)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:9px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--negro);border-radius:16px;padding:5px 12px;font-size:12.5px;font-weight:700;white-space:nowrap;background:var(--blanco)}
+.chip.on{background:var(--negro);color:var(--blanco)}
+
+/* Ayuda */
+.ayuda{margin:14px 0 4px;border:1.5px solid var(--negro);background:var(--fondo);font-size:13px;line-height:1.45}
+.ayuda h2{background:var(--negro);color:var(--blanco);font-size:12px;font-weight:700;letter-spacing:.4px;padding:6px 10px}
+.ayuda div{padding:8px 10px}
+.ayuda .rojo{color:var(--rojo);font-weight:700}
+
+/* Proveedor */
+section.prov{margin-top:18px;scroll-margin-top:118px}
+.prov-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--negro);color:var(--blanco);padding:9px 12px;width:100%;text-align:left}
+.prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
+.pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.escala{border:1.5px solid var(--negro);border-top:0;font-size:12.5px}
+.escala table{width:100%;border-collapse:collapse}
+.escala th{background:#222;color:var(--blanco);font-weight:700;text-align:left;padding:5px 10px;font-size:11.5px}
+.escala th:last-child,.escala td:last-child{text-align:right}
+.escala td{padding:5px 10px;border-top:1px solid var(--linea)}
+.escala td:last-child{color:var(--rojo);font-weight:700}
+.escala tr.alcanzado td{background:#FFF3F3}
+.escala-tit{padding:6px 10px;font-weight:700;background:var(--fondo);border-top:1px solid var(--linea)}
+
+/* Artículo */
+.art{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 2px;border-bottom:1px solid var(--linea);align-items:center}
+.art.con{background:rgba(255,215,0,.10)}
+.art .nom{font-weight:700;font-size:13.5px;line-height:1.25}
+.art .meta{font-size:11.5px;color:var(--gris);margin-top:2px}
+.art .precios{grid-column:1;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.lista{font-weight:700;font-size:12px}
+.lista.tachar{text-decoration:line-through;text-decoration-thickness:1px;color:#333}
+.final{color:var(--rojo);font-weight:900;font-size:17px}
+.final .pes{color:#666;font-weight:400;font-size:13px;margin-right:1px}
+.dto{color:var(--rojo);font-weight:700;font-size:11.5px}
+.badge{display:inline-block;background:var(--verde);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;margin-top:3px}
+.promo{grid-column:1/-1;font-size:11.5px;background:var(--fondo);border-left:3px solid var(--negro);padding:4px 8px}
+.paso{grid-column:2;grid-row:1/3;display:flex;align-items:center;border:1.5px solid var(--negro);border-radius:999px;overflow:hidden;background:var(--blanco)}
+.paso button{width:38px;height:38px;font-size:21px;font-weight:700;display:grid;place-items:center}
+.paso button:active{background:var(--fondo)}
+.paso input{width:44px;height:38px;border:0;text-align:center;font-weight:900;font-size:16px;-moz-appearance:textfield;background:transparent}
+.paso input::-webkit-outer-spin-button,.paso input::-webkit-inner-spin-button{-webkit-appearance:none}
+.art.con .paso{background:var(--negro);color:var(--blanco)}
+.art.con .paso input{color:var(--blanco)}
+.art.agotado .nom,.art.agotado .lista,.art.agotado .final,.art.agotado .final .pes,.art.agotado .dto{color:var(--gris-claro)}
+.art.agotado .meta{color:var(--gris-claro)}
+.sin-stock{grid-column:2;grid-row:1/3;border:1.5px solid var(--gris-claro);color:var(--gris);border-radius:999px;padding:9px 14px;font-weight:900;font-size:12.5px;letter-spacing:.4px;white-space:nowrap;background:var(--fondo)}
+.vacio{padding:30px 0;text-align:center;color:var(--gris)}
+
+/* Pie fijo */
+.pie{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--negro);color:var(--blanco);padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
+.pie .envoltura{display:flex;align-items:center;gap:12px}
+.pie .num{flex:1;min-width:0}
+.pie .tot{font-weight:900;font-size:19px}
+.pie .sub{font-size:12px;color:#CFCFCF}
+.pie .sub b{color:var(--amarillo)}
+.btn{border-radius:999px;padding:12px 18px;font-weight:900;font-size:14px;letter-spacing:.2px}
+.btn-blanco{background:var(--blanco);color:var(--negro)}
+.btn-blanco:disabled{opacity:.4}
+
+/* Resumen */
+.hoja{position:fixed;inset:0;z-index:50;background:var(--blanco);overflow-y:auto;display:none}
+.hoja.abierta{display:block}
+.hoja .cab .envoltura{justify-content:space-between}
+.cerrar{color:var(--blanco);font-size:14px;font-weight:700;border:1.5px solid var(--blanco);border-radius:999px;padding:6px 12px}
+.res-cli{font-size:18px;margin:16px 0 10px}
+.tabla-res{width:100%;border-collapse:collapse;border:2px solid var(--negro);font-size:13px}
+.tabla-res th{background:var(--negro);color:var(--blanco);font-weight:700;padding:8px 6px;font-size:11.5px;text-align:center}
+.tabla-res td{border-top:1px solid #1E1E1E;padding:8px 6px;text-align:center;vertical-align:middle}
+.tabla-res td.izq{text-align:left}
+.tabla-res td.fuerte{font-weight:900}
+.tabla-res .chico{display:block;font-size:11px;color:var(--gris)}
+.totales{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.ahorro{font-weight:700;font-size:16px}
+.pastilla{background:var(--negro);color:var(--blanco);border-radius:999px;padding:10px 22px;font-weight:900;font-size:19px;display:flex;gap:18px}
+.consejos{margin-top:14px;display:grid;gap:8px}
+.consejo{border:1.5px solid var(--rojo);color:var(--negro);background:#FFF3F3;border-radius:8px;padding:8px 10px;font-size:13px}
+.consejo b{color:var(--rojo)}
+.acciones{display:grid;gap:10px;margin:20px 0 10px}
+.btn-wa{background:var(--verde-wa);color:#fff;font-size:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-negro{background:var(--negro);color:var(--blanco);padding:14px}
+.btn-borde{border:1.5px solid var(--negro);padding:12px}
+.letra-chica{font-size:11.5px;color:var(--gris);line-height:1.45;margin:14px 0 30px}
+.aviso{margin-top:16px;padding:10px;border:1.5px solid var(--negro);font-size:13px;background:var(--fondo)}
+</style>
+</head>
+<body>
+
+<header class="cab">
+  <div class="envoltura">
+    <img src="assets/logo_cabecera.png" alt="SIO GLOBAL">
+    <div>
+      <h1>ARMÁ TU PEDIDO</h1>
+      <p>Vendedores: <b id="vend">Tomás y Yamila</b> · <b id="tel">341-605-5371</b></p>
+    </div>
+  </div>
+</header>
+
+<div class="barra">
+  <div class="envoltura">
+    <input class="buscar" id="buscar" type="search" placeholder="Buscá un producto o código…" autocomplete="off">
+    <nav class="chips" id="chips" aria-label="Proveedores"></nav>
+  </div>
+</div>
+
+<main class="envoltura">
+  <div class="ayuda">
+    <h2>CÓMO FUNCIONA</h2>
+    <div>Elegí la cantidad de <b>packs</b> con <b>+</b> y <b>−</b>. El descuento se aplica solo según cuántos packs lleves del mismo proveedor:
+      el precio <span class="rojo">en rojo</span> es lo que pagás por pack. Cuando termines, tocá <b>VER MI PEDIDO</b> y mandalo por WhatsApp.</div>
+  </div>
+  <div id="catalogo"><p class="vacio">Cargando precios…</p></div>
+  <p class="letra-chica" id="pie-datos"></p>
+</main>
+
+<div class="pie">
+  <div class="envoltura">
+    <div class="num">
+      <div class="tot" id="pie-total">$0</div>
+      <div class="sub" id="pie-sub">Todavía no elegiste productos</div>
+    </div>
+    <button class="btn btn-blanco" id="ver" disabled>VER MI PEDIDO</button>
+  </div>
+</div>
+
+<div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-label="Tu pedido">
+  <header class="cab">
+    <div class="envoltura">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="assets/logo_cabecera.png" alt="SIO GLOBAL">
+        <h1>TU PEDIDO</h1>
+      </div>
+      <button class="cerrar" id="cerrar">← Seguir</button>
+    </div>
+  </header>
+  <div class="envoltura">
+    <p class="res-cli">Simulación de pedido</p>
+    <div style="overflow-x:auto"><table class="tabla-res">
+      <thead><tr><th>CANT.</th><th>ARTÍCULO</th><th>P. PACK</th><th>DTO.</th><th>FINAL</th></tr></thead>
+      <tbody id="res-filas"></tbody>
+    </table></div>
+    <div class="totales">
+      <div class="ahorro">Ahorro total <span id="res-ahorro"></span></div>
+      <div class="pastilla"><span>TOTAL</span><span id="res-total"></span></div>
+    </div>
+    <div class="consejos" id="consejos"></div>
+    <div class="acciones">
+      <a class="btn btn-wa" id="enviar" href="#" target="_blank" rel="noopener" style="text-decoration:none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3z"/></svg>
+        ENVIAR PEDIDO POR WHATSAPP
+      </a>
+      <button class="btn btn-negro" id="pdf">DESCARGAR PDF DE LA SIMULACIÓN</button>
+      <button class="btn btn-borde" id="vaciar">Vaciar pedido</button>
+    </div>
+    <p class="letra-chica">Precios de lista general, finales con IVA e impuestos internos. Descuentos no acumulables.
+      Es una simulación: el pedido queda confirmado cuando te responde un vendedor, sujeto a stock.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+"use strict";
+let D = null;                       // datos.json
+const carrito = {};                 // cod -> packs
+let filtroCat = null, filtroTxt = "";
+const CLAVE = "sio_simulador_carrito_v1";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const p2 = n => "$ " + n.toLocaleString("es-AR", {minimumFractionDigits:2, maximumFractionDigits:2});
+const p0 = n => "$" + Math.round(n).toLocaleString("es-AR");
+const pctTxt = p => String(p).replace(".", ",") + "%";
+const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+const lindo = s => s.toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñ])/g, (m, a, b) => a + b.toUpperCase());
+
+function guardar(){ try { localStorage.setItem(CLAVE, JSON.stringify(carrito)); } catch (e) { /* sin almacenamiento: igual anda */ } }
+function recuperar(){
+  try {
+    const c = JSON.parse(localStorage.getItem(CLAVE) || "{}");
+    const validos = new Set(D.articulos.filter(a => !a.sin_stock).map(a => a.cod));   // lo que se quedó sin stock sale del pedido guardado
+    for (const [k, v] of Object.entries(c)) if (validos.has(k) && v > 0) carrito[k] = Math.floor(v);
+  } catch (e) { /* nada guardado */ }
+}
+
+/* ---------- Descuentos ---------- */
+function pctPara(esc, packs, unidades){
+  let pct = 0;
+  for (const e of esc) if ((e.tipo === "p" ? packs : unidades) >= e.desde) pct = Math.max(pct, e.pct);
+  return pct;
+}
+function totalesGrupo(grupo, extraCod){
+  let packs = 0, unidades = 0;
+  for (const a of D.articulos){
+    if (a.grupo !== grupo) continue;
+    let q = carrito[a.cod] || 0;
+    if (a.cod === extraCod && !q) q = 1;     // para mostrar el precio "si llevás 1"
+    packs += q; unidades += q * a.uni;
+  }
+  return {packs, unidades};
+}
+function pctArticulo(a){
+  if (!a.grupo) return 0;
+  const t = totalesGrupo(a.grupo, a.cod);
+  return pctPara(D.reglas[a.grupo].escalones, t.packs, t.unidades);
+}
+function maxPct(grupo){ return Math.max(0, ...D.reglas[grupo].escalones.map(e => e.pct)); }
+
+function calcular(){
+  const filas = []; let sin = 0, con = 0, packs = 0;
+  for (const a of D.articulos){
+    const q = carrito[a.cod]; if (!q) continue;
+    const pct = pctArticulo(a);
+    const s = q * a.precio, c = s * (1 - pct / 100);
+    filas.push({a, q, pct, sin: s, con: c}); sin += s; con += c; packs += q;
+  }
+  return {filas, sin, con, ahorro: sin - con, packs};
+}
+
+function consejos(){
+  const out = [], vistos = new Set();
+  for (const a of D.articulos){
+    if (!carrito[a.cod] || !a.grupo || vistos.has(a.grupo)) continue;
+    vistos.add(a.grupo);
+    const r = D.reglas[a.grupo], t = totalesGrupo(a.grupo);
+    const actual = pctPara(r.escalones, t.packs, t.unidades);
+    const sig = r.escalones.filter(e => e.pct > actual)
+      .map(e => ({e, falta: e.desde - (e.tipo === "p" ? t.packs : t.unidades)}))
+      .filter(x => x.falta > 0).sort((x, y) => x.e.pct - y.e.pct)[0];
+    if (!sig) continue;
+    const cuanto = sig.e.tipo === "p" ? `${sig.falta} pack${sig.falta > 1 ? "s" : ""}` : `${sig.falta} unidades`;
+    const etiqueta = r.etiqueta === r.etiqueta.toUpperCase() ? lindo(r.etiqueta) : r.etiqueta;
+    out.push(`Sumá <b>${cuanto} más</b> de ${esc(etiqueta)} y pasás al <b>-${pctTxt(sig.e.pct)}</b>.`);
+  }
+  return out;
+}
+
+/* ---------- Pantalla ---------- */
+function pintarChips(){
+  $("#chips").innerHTML = `<button class="chip ${filtroCat ? "" : "on"}" data-cat="">Todos</button>` +
+    D.categorias.map(c => `<button class="chip ${filtroCat === c ? "on" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+}
+
+function filaArticulo(a){
+  const q = carrito[a.cod] || 0;
+  const pct = pctArticulo(a);
+  const final = a.precio * (1 - pct / 100);
+  const precios = pct
+    ? `<span class="lista">${p2(a.precio)}</span><span class="final"><span class="pes">$</span>${final.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="dto">-${pctTxt(pct)}</span>`
+    : `<span class="final" style="color:var(--negro)"><span class="pes">$</span>${a.precio.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
+  return `<div class="art ${q ? "con" : ""} ${a.sin_stock ? "agotado" : ""}" data-cod="${esc(a.cod)}">
+    <div><div class="nom">${esc(a.nombre)}</div>
+      <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}</div>
+      ${a.badge ? `<span class="badge">${esc(a.badge)}</span>` : ""}</div>
+    ${a.sin_stock ? `<div class="sin-stock">SIN STOCK</div>` : `<div class="paso">
+      <button data-acc="menos" aria-label="Uno menos">−</button>
+      <input inputmode="numeric" pattern="[0-9]*" value="${q || ""}" placeholder="0" aria-label="Packs de ${esc(a.nombre)}">
+      <button data-acc="mas" aria-label="Uno más">+</button>
+    </div>`}
+    <div class="precios">${precios}</div>
+    ${a.promo ? `<div class="promo">🎁 Promo: ${/^\d/.test(a.promo.comprando) ? "comprando " + esc(a.promo.comprando) : esc(a.promo.comprando.charAt(0).toLowerCase() + a.promo.comprando.slice(1))} → ${esc(a.promo.obsequio)}</div>` : ""}
+  </div>`;
+}
+
+function tablaEscala(grupo){
+  const r = D.reglas[grupo], t = totalesGrupo(grupo);
+  const filas = r.escalones.map(e => {
+    const ok = (e.tipo === "p" ? t.packs : t.unidades) >= e.desde;
+    return `<tr class="${ok ? "alcanzado" : ""}"><td>${esc(e.texto)}</td><td>-${pctTxt(e.pct)}</td></tr>`;
+  }).join("");
+  return `<div class="escala-tit">Escala por volumen · ${esc(r.etiqueta)}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function pintarCatalogo(){
+  const txt = norm(filtroTxt.trim());
+  let html = "";
+  for (const cat of D.categorias){
+    if (filtroCat && cat !== filtroCat) continue;
+    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod).includes(txt)));
+    if (!arts.length) continue;
+    const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
+    const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
+    html += `<section class="prov" id="cat-${esc(norm(cat).replace(/[^A-Z0-9]/g, "_"))}">
+      <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
+      ${grupos.some(g => D.reglas[g].escalones.length > 1) ? `<div class="escala">${grupos.filter(g => D.reglas[g].escalones.length > 1).map(tablaEscala).join("")}</div>` : ""}
+      ${arts.map(filaArticulo).join("")}
+    </section>`;
+  }
+  $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
+}
+
+function pintarPie(){
+  const t = calcular();
+  $("#pie-total").textContent = p0(t.con);
+  $("#pie-sub").innerHTML = t.packs
+    ? `${t.packs} pack${t.packs > 1 ? "s" : ""}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`
+    : "Todavía no elegiste productos";
+  $("#ver").disabled = !t.packs;
+}
+
+function pintarResumen(){
+  const t = calcular();
+  $("#res-filas").innerHTML = t.filas.map(f => `<tr>
+      <td class="fuerte">${f.q}</td>
+      <td class="izq">${esc(f.a.nombre)}<span class="chico">Cód. ${esc(f.a.cod)}</span></td>
+      <td>${p0(f.a.precio)}</td>
+      <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
+      <td class="fuerte">${p0(f.con)}</td></tr>`).join("");
+  $("#res-ahorro").textContent = p0(t.ahorro);
+  $("#res-total").textContent = p0(t.con);
+  $("#consejos").innerHTML = consejos().map(c => `<div class="consejo">💡 ${c}</div>`).join("");
+  $("#enviar").href = `https://wa.me/${D.whatsapp}?text=${encodeURIComponent(mensaje())}`;
+}
+
+function refrescar(){ pintarCatalogo(); pintarPie(); guardar(); }
+
+function cambiar(cod, q){
+  if (D.articulos.find(a => a.cod === cod)?.sin_stock) return;
+  q = Math.max(0, Math.min(9999, Math.floor(Number(q) || 0)));
+  if (q) carrito[cod] = q; else delete carrito[cod];
+  refrescar();
+  const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"] input`);
+  if (el && document.activeElement !== el) el.blur();
+}
+
+/* ---------- WhatsApp ---------- */
+function mensaje(){
+  const t = calcular();
+  const hoy = new Date().toLocaleDateString("es-AR");
+  const lineas = t.filas.map(f => `• ${f.q} pack${f.q > 1 ? "s" : ""} ${f.a.nombre} (${f.a.cod})${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
+  return ["Hola! Armé este pedido en el simulador de SIO GLOBAL:", "", ...lineas, "",
+    `*Total: ${p0(t.con)}*`, t.ahorro >= 1 ? `Ahorro: ${p0(t.ahorro)}` : null,
+    `(${t.packs} packs · precios de lista general del ${hoy})`].filter(x => x !== null).join("\n");
+}
+
+/* ---------- PDF (misma estética que la simulación del CRM) ---------- */
+async function aDataUrl(url){
+  const r = await fetch(url); const b = await r.blob();
+  return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
+}
+async function fuentePdf(doc){
+  try {
+    for (const [arch, estilo] of [["Mulish-Regular.ttf", "normal"], ["Mulish-Bold.ttf", "bold"]]){
+      const b64 = (await aDataUrl("assets/" + arch)).split(",")[1];
+      doc.addFileToVFS(arch, b64); doc.addFont(arch, "Mulish", estilo);
+    }
+    return "Mulish";
+  } catch (e) { return "helvetica"; }
+}
+async function descargarPdf(){
+  const t = calcular(); if (!t.filas.length) return;
+  const boton = $("#pdf"); boton.disabled = true; boton.textContent = "Armando el PDF…";
+  try {
+    const {jsPDF} = window.jspdf;
+    const [logo, marca] = await Promise.all([aDataUrl("assets/logo_cabecera.png"), aDataUrl("assets/marca_agua.png")]);
+    const ANCHO = 963, X0 = 63, X1 = 870, COLS = [63, 154, 449, 580, 733, 870];
+    const TIT = ["CANT.", "ARTÍCULOS", "P. PACK", "DESCUENTO", "FINAL"];
+    const YT = 131, CAB = 35, PIE = 35, POR_HOJA = 30;
+    const d = new Date();
+    const vig = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(2);
+    const filas = t.filas;
+    let hojas = [];
+    for (let i = 0; i < filas.length; i += POR_HOJA) hojas.push(filas.slice(i, i + POR_HOJA));
+    if (hojas.length > 1 && hojas[hojas.length - 1].length < 4){
+      const mover = 4 - hojas[hojas.length - 1].length;
+      hojas[hojas.length - 1] = hojas[hojas.length - 2].slice(-mover).concat(hojas[hojas.length - 1]);
+      hojas[hojas.length - 2] = hojas[hojas.length - 2].slice(0, -mover);
+    }
+    let doc = null, F = "helvetica";
+    for (let h = 0; h < hojas.length; h++){
+      const parte = hojas[h], ultima = h === hojas.length - 1;
+      const n = Math.max(parte.length, 6), af = n <= 8 ? 38 : 30;
+      const yc = YT + CAB, yp = yc + n * af, yf = yp + (ultima ? PIE : 0), alto = yf + 50;
+      if (!doc){ doc = new jsPDF({orientation: "landscape", unit: "pt", format: [ANCHO, alto]}); F = await fuentePdf(doc); }
+      else doc.addPage([ANCHO, alto], "landscape");
+      doc.setFillColor(245, 245, 245); doc.rect(0, 0, ANCHO, alto, "F");
+      doc.setFillColor(0, 0, 0); doc.rect(X0 - 1.5, YT - 1.5, X1 - X0 + 3, yf - YT + 3, "F");
+      doc.setFillColor(245, 245, 245); doc.rect(X0, yc, X1 - X0, yf - yc, "F");
+      try { const ac = yf - yc, hh = Math.min(ac, 400), ww = hh * 1537 / 1096;
+        doc.addImage(marca, "PNG", (X0 + X1) / 2 - ww / 2 - 10, yc + ac / 2 - hh / 2, ww, hh); } catch (e) { /* sin marca igual sale */ }
+      doc.setFillColor(0, 0, 0); doc.rect(0, 9, ANCHO, 81, "F");
+      doc.setTextColor(255, 255, 255); doc.setFont(F, "bold"); doc.setFontSize(24); doc.text("PRESUPUESTO", 63, 59);
+      try { doc.addImage(logo, "PNG", 435, 9, 93, 81); } catch (e) { /* sin logo igual sale */ }
+      doc.setTextColor(255, 215, 0); doc.setFontSize(11); doc.text("WHATSAPP", X1, 46, {align: "right"});
+      doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text(D.whatsapp_texto, X1, 69, {align: "right"});
+      if (hojas.length > 1){ doc.setFont(F, "normal"); doc.setFontSize(11); doc.text(`Hoja ${h + 1} de ${hojas.length}`, X1, 83, {align: "right"}); }
+      doc.setTextColor(0, 0, 0); doc.setFont(F, "normal"); doc.setFontSize(18);
+      doc.text("Simulación de pedido", 63, 117);
+      doc.setFillColor(0, 0, 0); doc.rect(X0 - 1.5, YT - 1.5, X1 - X0 + 3, CAB + 1.5, "F");
+      doc.setTextColor(255, 255, 255); doc.setFontSize(12);
+      TIT.forEach((s, i) => doc.text(s, (COLS[i] + COLS[i + 1]) / 2, YT + 21.5 + 4, {align: "center"}));
+      doc.setDrawColor(30, 30, 30); doc.setLineWidth(1);
+      for (let i = 1; i <= n; i++) doc.line(X0, yc + i * af, X1, yc + i * af);
+      COLS.slice(1, -1).forEach(x => doc.line(x, yc, x, yp));
+      doc.setTextColor(0, 0, 0);
+      parte.forEach((f, i) => {
+        const b = yc + i * af + af / 2 + 4.5;
+        doc.setFont(F, "bold"); doc.setFontSize(13);
+        doc.text(String(f.q), (COLS[0] + COLS[1]) / 2, b, {align: "center"});
+        let tam = 12.5; doc.setFont(F, "normal"); doc.setFontSize(tam);
+        let desc = f.a.nombre;
+        while (tam > 7.5 && doc.getTextWidth(desc) > COLS[2] - COLS[1] - 24){ tam -= 0.5; doc.setFontSize(tam); }
+        while (desc.length > 4 && doc.getTextWidth(desc) > COLS[2] - COLS[1] - 24) desc = desc.slice(0, -2).trim() + "…";
+        doc.text(desc, COLS[1] + 12, b);
+        doc.setFontSize(13);
+        doc.text(p0(f.a.precio), (COLS[2] + COLS[3]) / 2, b, {align: "center"});
+        doc.text(f.pct ? pctTxt(f.pct) : "-", (COLS[3] + COLS[4]) / 2, b, {align: "center"});
+        doc.setFont(F, "bold");
+        doc.text(p0(f.con), (COLS[4] + COLS[5]) / 2, b, {align: "center"});
+      });
+      if (ultima){
+        const b = yp + 24, total = p0(t.con);
+        doc.setTextColor(0, 0, 0); doc.setFont(F, "bold"); doc.setFontSize(18);
+        doc.text("Ahorro total", 74, b); doc.text(p0(t.ahorro), 222, b);
+        const xp = Math.min(622, X1 - 66 - doc.getTextWidth(total) - 30 - doc.getTextWidth("TOTAL") - 35);
+        doc.setFillColor(0, 0, 0); doc.roundedRect(xp, yp, X1 - xp, PIE, 17.5, 17.5, "F");
+        doc.rect(X1 - 20, yp, 20, PIE, "F");
+        doc.setTextColor(255, 255, 255); doc.text("TOTAL", xp + 35, b); doc.text(total, X1 - 66, b, {align: "right"});
+      }
+      doc.setTextColor(74, 74, 74); doc.setFont(F, "normal"); doc.setFontSize(14);
+      doc.text("Precios vigentes hasta " + vig, X1, yf + 22 + 4, {align: "right"});
+    }
+    doc.save(`Simulacion_SIO_${new Date().toISOString().slice(0, 10)}.pdf`);
+  } catch (e) {
+    alert("No se pudo armar el PDF. Probá de nuevo o mandá el pedido por WhatsApp.");
+  } finally {
+    boton.disabled = false; boton.textContent = "DESCARGAR PDF DE LA SIMULACIÓN";
+  }
+}
+
+/* ---------- Eventos ---------- */
+$("#catalogo").addEventListener("click", e => {
+  const b = e.target.closest("button[data-acc]"); if (!b) return;
+  const cod = b.closest(".art").dataset.cod, q = carrito[cod] || 0;
+  cambiar(cod, b.dataset.acc === "mas" ? q + 1 : q - 1);
+});
+$("#catalogo").addEventListener("change", e => {
+  if (e.target.matches(".paso input")) cambiar(e.target.closest(".art").dataset.cod, e.target.value);
+});
+$("#catalogo").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.matches(".paso input")) e.target.blur();
+});
+$("#chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  filtroCat = b.dataset.cat || null; pintarChips(); pintarCatalogo();
+  window.scrollTo({top: $(".barra").offsetTop, behavior: "smooth"});
+});
+$("#buscar").addEventListener("input", e => { filtroTxt = e.target.value; pintarCatalogo(); });
+$("#ver").addEventListener("click", () => { pintarResumen(); $("#hoja").classList.add("abierta"); $("#hoja").scrollTop = 0; document.body.style.overflow = "hidden"; });
+$("#cerrar").addEventListener("click", () => { $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; });
+$("#pdf").addEventListener("click", descargarPdf);
+let vaciarArmado = null;
+$("#vaciar").addEventListener("click", () => {
+  const b = $("#vaciar");
+  if (!vaciarArmado){            // primer toque: pide confirmación en el mismo botón (sin cartel del navegador)
+    b.textContent = "Tocá de nuevo para vaciar todo";
+    vaciarArmado = setTimeout(() => { vaciarArmado = null; b.textContent = "Vaciar pedido"; }, 4000);
+    return;
+  }
+  clearTimeout(vaciarArmado); vaciarArmado = null; b.textContent = "Vaciar pedido";
+  for (const k of Object.keys(carrito)) delete carrito[k];
+  refrescar(); $("#cerrar").click();
+});
+
+/* ---------- Arranque ---------- */
+(async () => {
+  try {
+    const r = await fetch("datos.json?t=" + Date.now(), {cache: "no-store"});
+    D = await r.json();
+  } catch (e) {
+    $("#catalogo").innerHTML = `<p class="vacio">No se pudieron cargar los precios. Revisá la conexión y volvé a abrir la página.</p>`;
+    return;
+  }
+  $("#vend").textContent = D.vendedores; $("#tel").textContent = D.whatsapp_texto;
+  const f = new Date(D.actualizado);
+  $("#pie-datos").textContent = `Precios de lista general, finales con IVA e Imp. internos. Actualizado el ${f.toLocaleDateString("es-AR")} a las ${f.toLocaleTimeString("es-AR", {hour: "2-digit", minute: "2-digit"})}.`;
+  recuperar(); pintarChips(); refrescar();
+})();
+</script>
+</body>
+</html>
