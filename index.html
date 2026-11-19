@@ -244,9 +244,7 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
       <div style="display:flex;align-items:center;gap:12px">
         <img src="assets/logo_cabecera.png" alt="SIO GLOBAL">
         <h1>TU PEDIDO</h1>
-      </div>
-      <button class="cerrar" id="cerrar">✏️ Modificar pedido</button>
-    </div>
+      </div>    </div>
   </header>
   <div class="envoltura">
     <p class="res-cli">Simulación de pedido</p>
@@ -778,8 +776,9 @@ $("#chips").addEventListener("click", e => {
 });
 $("#buscar").addEventListener("input", e => { filtroTxt = e.target.value; pintarCatalogo(); });
 $("#ver").addEventListener("click", () => { pintarResumen(); $("#hoja").classList.add("abierta"); $("#hoja").scrollTop = 0; document.body.style.overflow = "hidden"; });
-$("#cerrar").addEventListener("click", () => { $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; });
-$("#modificar").addEventListener("click", () => $("#cerrar").click());
+// Toto 19/11: sin botón arriba; se vuelve a la lista solo con "MODIFICAR PEDIDO" de abajo
+function cerrarHoja(){ $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; }
+$("#modificar").addEventListener("click", cerrarHoja);
 $("#pdf").addEventListener("click", descargarPdf);
 let vaciarArmado = null;
 $("#vaciar").addEventListener("click", () => {
@@ -791,7 +790,7 @@ $("#vaciar").addEventListener("click", () => {
   }
   clearTimeout(vaciarArmado); vaciarArmado = null; b.textContent = "Vaciar pedido";
   for (const k of Object.keys(carrito)) delete carrito[k];
-  refrescar(); $("#cerrar").click();
+  refrescar(); cerrarHoja();
 });
 
 /* ---------- Arranque ---------- */
