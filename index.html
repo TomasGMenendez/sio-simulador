@@ -49,20 +49,21 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 
-/* Escala: queda fija debajo del buscador mientras se recorren los artículos de ese proveedor (Toto 19/11) */
-.escala{position:sticky;top:calc(var(--barra-alto,104px) + env(safe-area-inset-top,0px));z-index:15;background:var(--blanco);
-  border:1.5px solid var(--negro);border-top:0;box-shadow:0 6px 10px -8px rgba(0,0,0,.45)}
-.escala-bloque+.escala-bloque{border-top:1.5px solid var(--negro)}
-.escala-tit{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 10px;font-weight:700;font-size:11.5px;background:var(--fondo)}
+/* Escala (estética original de tabla). Al bajar, acompaña el scroll y se queda en el MEDIO de la pantalla mientras se recorre
+   ese proveedor (Toto 19/11). El "top" de cada tabla lo calcula ubicarEscalas() según su alto. */
+.escala{position:sticky;top:calc(var(--barra-alto,104px) + 8px);z-index:15;background:var(--blanco);
+  border:1.5px solid var(--negro);font-size:12.5px;box-shadow:0 6px 16px rgba(0,0,0,.22)}
+.escala table{width:100%;border-collapse:collapse}
+.escala th{background:#222;color:var(--blanco);font-weight:700;text-align:left;padding:5px 10px;font-size:11.5px}
+.escala th:last-child,.escala td:last-child{text-align:right}
+.escala td{padding:5px 10px;border-top:1px solid var(--linea);transition:background .25s}
+.escala td:last-child{color:var(--rojo);font-weight:700}
+.escala tr.alcanzado td{background:var(--amarillo);color:var(--negro);font-weight:700}
+.escala tr.alcanzado td:last-child{color:var(--negro);font-weight:900}
+.escala tr.vigente td{box-shadow:inset 0 2px 0 var(--negro),inset 0 -2px 0 var(--negro)}
+.escala-tit{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;font-weight:700;background:var(--fondo);border-top:1px solid var(--linea)}
+.escala-bloque:first-child .escala-tit{border-top:0}
 .logrado{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 9px;font-weight:900;font-size:11.5px;white-space:nowrap}
-.tramos{display:grid;grid-template-columns:repeat(auto-fit,minmax(66px,1fr))}
-.tramo{display:flex;flex-direction:column;justify-content:center;gap:1px;padding:5px 6px;text-align:center;border-left:1px solid var(--linea);transition:background .25s}
-.tramo:first-child{border-left:0}
-.tramo .cond{font-size:10.5px;line-height:1.2;color:var(--gris)}
-.tramo b{font-size:14px;font-weight:900;color:var(--rojo)}
-.tramo.alcanzado{background:var(--amarillo)}
-.tramo.alcanzado .cond,.tramo.alcanzado b{color:var(--negro)}
-.tramo.vigente{box-shadow:inset 0 0 0 2px var(--negro)}
 
 /* Artículo */
 .art{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 2px;border-bottom:1px solid var(--linea);align-items:center}
@@ -138,9 +139,13 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
   .arts{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}
   .chips{flex-wrap:wrap;overflow:visible}
   .cab h1{font-size:24px}
-  .tramo .cond{font-size:11.5px}
-  .tramo b{font-size:15px}
   .hoja .envoltura{max-width:880px}
+}
+@media (max-width:560px){
+  .escala{font-size:12px}
+  .escala td{padding:3px 10px}
+  .escala th{padding:3px 10px}
+  .escala-tit{padding:4px 10px;font-size:12px}
 }
 @media (max-width:370px){
   .envoltura{padding:0 12px}
@@ -366,14 +371,24 @@ function filaArticulo(a){
 }
 
 function tablaEscala(grupo){
-  // Tramos en una fila (compacta, porque queda fija arriba al bajar). Los logrados con lo cargado van en AMARILLO (Toto 19/11).
+  // Misma tabla de siempre; las filas logradas con lo cargado van en AMARILLO y la vigente con borde (Toto 19/11).
   const r = D.reglas[grupo], t = totalesGrupo(grupo);
   const actual = pctPara(r.escalones, t.packs, t.unidades);
-  const celdas = r.escalones.map(e => {
+  const filas = r.escalones.map(e => {
     const ok = (e.tipo === "p" ? t.packs : t.unidades) >= e.desde;
-    return `<div class="tramo ${ok ? "alcanzado" : ""} ${ok && e.pct === actual ? "vigente" : ""}"><span class="cond">${esc(e.texto)}</span><b>-${pctTxt(e.pct)}</b></div>`;
+    return `<tr class="${ok ? "alcanzado" : ""} ${ok && e.pct === actual ? "vigente" : ""}"><td>${esc(e.texto)}</td><td>-${pctTxt(e.pct)}</td></tr>`;
   }).join("");
-  return `<div class="escala-bloque"><div class="escala-tit"><span>Escala · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><div class="tramos">${celdas}</div></div>`;
+  return `<div class="escala-bloque"><div class="escala-tit"><span>Escala por volumen · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+}
+
+// Cada tabla se queda centrada en la parte visible (entre el buscador y el total de abajo). Si es más alta que eso, va
+// pegada al buscador. Se recalcula al redibujar y al cambiar el tamaño de la pantalla.
+function ubicarEscalas(){
+  const arriba = $(".barra").offsetHeight, abajo = $(".pie").offsetHeight;
+  const libre = window.innerHeight - arriba - abajo;
+  for (const el of document.querySelectorAll(".escala")){
+    el.style.top = Math.round(arriba + Math.max(8, (libre - el.offsetHeight) / 2)) + "px";
+  }
 }
 
 function pintarCatalogo(){
@@ -385,13 +400,16 @@ function pintarCatalogo(){
     if (!arts.length) continue;
     const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
     const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
+    // La escala fija solo de los grupos que tienen algo para comprar (19/11: el Bidón sin stock sumaba otra tabla en Cunnington)
+    const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1 && arts.some(a => a.grupo === g && !a.sin_stock));
     html += `<section class="prov" id="cat-${esc(norm(cat).replace(/[^A-Z0-9]/g, "_"))}">
       <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
-      ${grupos.some(g => D.reglas[g].escalones.length > 1) ? `<div class="escala">${grupos.filter(g => D.reglas[g].escalones.length > 1).map(tablaEscala).join("")}</div>` : ""}
+      ${conEscala.length ? `<div class="escala">${conEscala.map(tablaEscala).join("")}</div>` : ""}
       <div class="arts">${arts.map(filaArticulo).join("")}</div>
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
+  ubicarEscalas();
 }
 
 function pintarPie(){
@@ -577,10 +595,10 @@ $("#vaciar").addEventListener("click", () => {
 
 /* ---------- Arranque ---------- */
 // La escala fija se apoya justo debajo del buscador: su alto cambia con el ancho (chips en 1 o 2 renglones).
-const fijarAltoBarra = () => document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px");
+const fijarAltoBarra = () => { document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px"); ubicarEscalas(); };
 fijarAltoBarra();
 if (window.ResizeObserver) new ResizeObserver(fijarAltoBarra).observe($(".barra"));
-else window.addEventListener("resize", fijarAltoBarra);
+window.addEventListener("resize", fijarAltoBarra);
 (async () => {
   try {
     const r = await fetch("datos.json?t=" + Date.now(), {cache: "no-store"});
