@@ -64,6 +64,19 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .escala tr.vigente td{box-shadow:inset 0 2px 0 var(--negro),inset 0 -2px 0 var(--negro)}
 .escala-tit{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;font-weight:700;background:var(--fondo);border-top:1px solid var(--linea)}
 .escala-bloque:first-child .escala-tit{border-top:0}
+/* Varias escalas en un proveedor = carrusel que el cliente DESLIZA (o toca las flechas). Nunca pasa solo (Toto 19/11). */
+.carrusel{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;align-items:flex-start;
+  overscroll-behavior-x:contain;transition:height .2s}
+.carrusel::-webkit-scrollbar{display:none}
+.diapo{flex:0 0 100%;min-width:0;scroll-snap-align:start}
+.carrusel-pie{display:flex;align-items:center;gap:8px;padding:2px 6px;background:var(--fondo);border-top:1px solid var(--linea)}
+.flecha{width:30px;height:26px;font-size:21px;font-weight:900;line-height:1;border-radius:6px}
+.flecha:active{background:var(--linea)}
+.flecha:disabled{opacity:.25}
+.puntos{display:flex;gap:6px}
+.puntos i{width:8px;height:8px;border-radius:50%;background:var(--gris-claro)}
+.puntos i.on{background:var(--negro)}
+.carrusel-txt{flex:1;font-size:11px;color:var(--gris);text-align:center}
 .logrado{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 9px;font-weight:900;font-size:11.5px;white-space:nowrap}
 
 /* Artículo */
@@ -391,14 +404,16 @@ function pintarCatalogo(){
     if (!arts.length) continue;
     const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
     const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
-    // La escala fija solo de los grupos que tienen algo para comprar (19/11: el Bidón sin stock sumaba otra tabla en Cunnington)
-    const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1 && arts.some(a => a.grupo === g && !a.sin_stock));
-    html += `<section class="prov" id="cat-${esc(norm(cat).replace(/[^A-Z0-9]/g, "_"))}">
+    // Todas las escalas del proveedor; primero la del grupo con más artículos (Cunnington antes que Bidón/Sifón)
+    const cuantos = g => arts.filter(a => a.grupo === g).length;
+    const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1).sort((x, y) => cuantos(y) - cuantos(x));
+    const secId = "cat-" + norm(cat).replace(/[^A-Z0-9]/g, "_");
+    html += `<section class="prov" id="${esc(secId)}">
       <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
       ${conEscala.length
         ? (() => {   // la tabla acompaña solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
             const mitad = Math.max(1, Math.ceil(arts.length / 4) * 2);
-            return `<div class="mitad1"><div class="escala">${conEscala.map(tablaEscala).join("")}</div>
+            return `<div class="mitad1">${bloqueEscalas(secId, conEscala)}
               <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
               <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
           })()
@@ -406,6 +421,47 @@ function pintarCatalogo(){
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
+  armarCarruseles();
+}
+
+/* ---------- Carrusel de escalas ---------- */
+const diapoDe = {};          // id de sección -> escala que está mirando (se conserva al redibujar con cada + / −)
+let enfocarGrupo = null;     // al cargar un artículo se muestra la escala de SU grupo (lo hizo el cliente, no un temporizador)
+
+function bloqueEscalas(secId, gs){
+  if (gs.length === 1) return `<div class="escala">${tablaEscala(gs[0])}</div>`;
+  return `<div class="escala" data-sec="${esc(secId)}">
+    <div class="carrusel">${gs.map(g => `<div class="diapo" data-grupo="${esc(g)}">${tablaEscala(g)}</div>`).join("")}</div>
+    <div class="carrusel-pie"><button class="flecha" data-dir="-1" aria-label="Escala anterior">‹</button>
+      <span class="puntos">${gs.map(() => "<i></i>").join("")}</span>
+      <span class="carrusel-txt">Deslizá para ver la otra escala (${gs.length})</span>
+      <button class="flecha" data-dir="1" aria-label="Escala siguiente">›</button></div></div>`;
+}
+
+function marcarDiapo(escala, i){
+  const car = escala.querySelector(".carrusel"), diapos = car.children;
+  i = Math.max(0, Math.min(diapos.length - 1, i));
+  diapoDe[escala.dataset.sec] = i;
+  escala.querySelectorAll(".puntos i").forEach((p, k) => p.classList.toggle("on", k === i));
+  escala.querySelector('.flecha[data-dir="-1"]').disabled = i === 0;
+  escala.querySelector('.flecha[data-dir="1"]').disabled = i === diapos.length - 1;
+  car.style.height = diapos[i].offsetHeight + "px";      // el alto acompaña a la escala que se ve
+}
+
+function armarCarruseles(){
+  for (const escala of document.querySelectorAll(".escala[data-sec]")){
+    const car = escala.querySelector(".carrusel"), diapos = [...car.children];
+    let i = diapoDe[escala.dataset.sec] || 0;
+    if (enfocarGrupo){ const k = diapos.findIndex(d => d.dataset.grupo === enfocarGrupo); if (k >= 0) i = k; }
+    car.scrollLeft = i * car.clientWidth;
+    marcarDiapo(escala, i);
+    let espera = null;
+    car.addEventListener("scroll", () => {
+      clearTimeout(espera);
+      espera = setTimeout(() => marcarDiapo(escala, Math.round(car.scrollLeft / car.clientWidth)), 60);
+    }, {passive: true});
+  }
+  enfocarGrupo = null;
 }
 
 function pintarPie(){
@@ -439,6 +495,7 @@ function cambiar(cod, u){            // u = unidades
   u = Math.max(0, Math.min(9999 * a.uni, Math.floor(Number(u) || 0)));
   if (!porUnidad(a)) u = Math.round(u / a.uni) * a.uni;          // sin venta por unidad: packs enteros
   if (u) carrito[cod] = u; else delete carrito[cod];
+  enfocarGrupo = a.grupo;
   refrescar();
   const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"] input`);
   if (el && document.activeElement !== el) el.blur();
@@ -552,6 +609,12 @@ async function descargarPdf(){
 /* ---------- Eventos ---------- */
 const artDe = el => D.articulos.find(a => a.cod === el.closest(".art").dataset.cod);
 $("#catalogo").addEventListener("click", e => {
+  const f = e.target.closest(".flecha");
+  if (f){
+    const car = f.closest(".escala").querySelector(".carrusel");
+    car.scrollBy({left: Number(f.dataset.dir) * car.clientWidth, behavior: "smooth"});
+    return;
+  }
   const b = e.target.closest("button[data-acc]"); if (!b) return;
   const a = artDe(b), u = carrito[a.cod] || 0, {pk} = partes(a, u);
   const [tipo, signo] = b.dataset.acc;                      // "p+", "p-", "u+", "u-"
@@ -591,7 +654,13 @@ $("#vaciar").addEventListener("click", () => {
 
 /* ---------- Arranque ---------- */
 // La escala fija se apoya justo debajo del buscador: su alto cambia con el ancho (chips en 1 o 2 renglones).
-const fijarAltoBarra = () => document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px");
+const fijarAltoBarra = () => {
+  document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px");
+  for (const e of document.querySelectorAll(".escala[data-sec]")){      // al girar el celular cambia el ancho de cada escala
+    const car = e.querySelector(".carrusel"), i = diapoDe[e.dataset.sec] || 0;
+    car.scrollLeft = i * car.clientWidth; marcarDiapo(e, i);
+  }
+};
 fijarAltoBarra();
 if (window.ResizeObserver) new ResizeObserver(fijarAltoBarra).observe($(".barra"));
 window.addEventListener("resize", fijarAltoBarra);
