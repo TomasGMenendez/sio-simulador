@@ -463,6 +463,8 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 "use strict";
+// Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
+const VERSION_PAGINA = "4c565e7b06";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -1243,6 +1245,18 @@ window.addEventListener("scroll", () => {
   } catch (e) {
     $("#catalogo").innerHTML = `<p class="vacio">No se pudieron cargar los precios. Revisá la conexión y volvé a abrir la página.</p>`;
     return;
+  }
+  // GitHub Pages deja la página en la caché del navegador hasta 10 minutos: si datos.json (que se pide siempre fresco)
+  // dice que hay una versión más nueva de la página, se recarga UNA vez con ?v= para saltear la caché (Toto 19/11).
+  if (VERSION_PAGINA !== "dev" && D.pagina && D.pagina !== VERSION_PAGINA){
+    let ya = null;
+    try { ya = sessionStorage.getItem("sio_recarga_v"); } catch (e) { /* sin almacenamiento */ }
+    if (ya !== D.pagina){
+      try { sessionStorage.setItem("sio_recarga_v", D.pagina); } catch (e) { /* nada */ }
+      const u = new URL(location.href); u.searchParams.set("v", D.pagina);
+      location.replace(u.toString());
+      return;
+    }
   }
   $("#vend").textContent = D.vendedores; $("#tel").textContent = D.whatsapp_texto;
   const f = new Date(D.actualizado);
