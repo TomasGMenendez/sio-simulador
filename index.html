@@ -251,25 +251,25 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 .vuela{position:fixed;width:24px;height:24px;border-radius:50%;background:var(--amarillo);color:var(--negro);border:2px solid var(--negro);
   font-weight:900;font-size:15px;line-height:20px;text-align:center;z-index:80;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 
-/* Escala plegable (Toto 19/11): al bajar, la tabla se pliega y queda el título con el descuento máximo. La ficha ›
-   (otra escala) se DESLIZA a la DERECHA y en el lugar que deja sube desde abajo la ▾ que la vuelve a desplegar: quedan
-   los dos a la vista, ▾ a la izquierda y › a la derecha. Mientras se pliega, un margen ocupa exactamente su lugar: la
-   página no salta (en iPhone no hay "scroll anchoring" que lo corrija). */
+/* Escala plegable (Toto 19/11): al bajar, la tabla se pliega y queda el título con el descuento máximo. Plegada: SOLO
+   la ▾ (despliega); desplegada: SOLO la › (otra escala). Al plegar, la › se desliza a la derecha y sale de la ranura
+   mientras la ▾ sube desde abajo en su lugar; al desplegar, al revés. Mientras se pliega, un margen ocupa exactamente
+   su lugar: la página no salta (en iPhone no hay "scroll anchoring" que lo corrija). */
 .fijo{transition:margin-bottom .4s var(--suave)}
 .plegable{overflow:hidden;transition:height .4s var(--suave),opacity .3s ease}
 .fijo.plegado .plegable{opacity:0}
 .fijo.sin-trans,.fijo.sin-trans *{transition:none!important}
-/* ranura de botones: 30 px (›) que al plegar crece a 66 px (▾ + › corrida a la derecha); con una sola escala, de 0 a 30 px (▾) */
+/* ranura de botones: un solo lugar de 30 px (› desplegada, ▾ plegada); con una sola escala, de 0 a 30 px (solo ▾) */
 .cab-botones{position:relative;flex:none;width:30px;height:30px;border-radius:15px;overflow:hidden;
   transition:width .38s var(--suave),margin .38s var(--suave)}
-.fijo.plegado .cab-botones{width:66px}
 .cab-botones.solo{width:0;margin-left:-10px}
 .fijo.plegado .cab-botones.solo{width:30px;margin-left:0}
 /* medidas fijas: un <button> absoluto sin alto propio toma el de su contenido (22 px) y quedaba corrido al redibujar */
 .cab-botones .ficha-escala,.cab-botones .desplegar{position:absolute;top:0;left:0;width:30px;height:30px;margin:0}
-/* la › se desliza a la derecha moviendo "left" (no transform: así no choca con su giro de "volver" ni con el toque) */
-.cab-botones .ficha-escala{transition:left .45s var(--suave),transform .35s var(--rebote),box-shadow .2s ease}
-.fijo.plegado .cab-botones .ficha-escala{left:36px}
+/* la › se desliza a la derecha hasta salir de la ranura moviendo "left" (no transform: así no choca con su giro de
+   "volver" ni con el toque); al desplegar vuelve deslizándose desde la derecha */
+.cab-botones .ficha-escala{transition:left .4s var(--suave) .1s,opacity .3s ease .1s,transform .35s var(--rebote),box-shadow .2s ease}
+.fijo.plegado .cab-botones .ficha-escala{left:36px;opacity:0;pointer-events:none;transition:left .4s var(--suave),opacity .3s ease}
 .desplegar{border-radius:50%;background:var(--blanco);color:var(--negro);display:grid;place-items:center;padding:0;
   transform:translateY(115%);opacity:0;pointer-events:none;transition:transform .3s ease-in,opacity .2s ease}
 .fijo.plegado .desplegar{transform:none;opacity:1;pointer-events:auto;transition:transform .45s var(--rebote) .2s,opacity .25s ease .2s}
@@ -464,7 +464,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "4c565e7b06";
+const VERSION_PAGINA = "24062eded1";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
