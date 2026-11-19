@@ -125,8 +125,8 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .btn-blanco:disabled{opacity:.4}
 
 /* Resumen */
-.hoja{position:fixed;inset:0;z-index:50;background:var(--blanco);overflow-y:auto;display:none}
-.hoja.abierta{display:block}
+.hoja{position:fixed;inset:0;z-index:50;background:var(--blanco);overflow-y:auto}
+/* (se abre como hoja que sube desde abajo: ver Animaciones) */
 .hoja .cab .envoltura{justify-content:space-between}
 /* Volver a cambiar el pedido (Toto 19/11: "Seguir" no se entendía) */
 .cerrar{background:var(--amarillo);color:var(--negro);font-size:13.5px;font-weight:900;border-radius:999px;padding:8px 14px;white-space:nowrap}
@@ -150,12 +150,11 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .btn-borde{border:1.5px solid var(--negro);padding:12px}
 .minimo{border:1.5px solid var(--rojo);background:#FFF3F3;border-radius:8px;padding:9px 11px;font-size:13.5px;margin-top:12px}
 .minimo b{color:var(--rojo)}
-.btn-wa.deshabilitado{opacity:.4;pointer-events:none}
+.btn-wa.deshabilitado{opacity:.4;cursor:not-allowed}   /* se puede tocar: sacude el aviso del mínimo */
 .pie .sub .falta{color:#FF8A8A;font-weight:700}
 
 /* Bienvenida: comunidad + mini explicación (Toto 19/11) */
-.bienvenida{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
-.bienvenida.abierta{display:flex}
+.bienvenida{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
 .bv-caja{background:var(--blanco);width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto;border:2px solid var(--negro);border-radius:14px}
 .bv-cab{background:var(--negro);color:var(--blanco);display:flex;align-items:center;gap:12px;padding:12px 14px}
 .bv-cab img{height:42px;width:auto;flex:none}
@@ -169,7 +168,7 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .bv-lista{font-size:15px;gap:10px}
 .bv-lista li{line-height:1.35}
 .bv-lista li:last-child{font-size:13.5px}
-.bv-dto{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 10px;font-weight:900}   /* = "Lograste -X%" */
+.bv-dto{display:inline-block;background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 10px;font-weight:900}   /* = "Lograste -X%" */
 .bv-final{color:var(--rojo);font-weight:900}                                                                 /* = precio final */
 .bv-wa{vertical-align:-6px;margin-left:2px}
 .bv-claves{display:flex;flex-wrap:wrap;gap:6px}
@@ -179,6 +178,121 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .bv-comunidad .btn-wa{font-size:14px;padding:12px;text-decoration:none}
 .letra-chica{font-size:11.5px;color:var(--gris);line-height:1.45;margin:14px 0 30px}
 .aviso{margin-top:16px;padding:10px;border:1.5px solid var(--negro);font-size:13px;background:var(--fondo)}
+
+/* ================= Animaciones (Toto 19/11: "super profesionales") =================
+   Reglas: solo transform / opacity (fluido en celulares), curvas suaves, nada se repite al tocar + / − salvo lo que
+   cambió de verdad (lo decide animarCambios()), y todo se apaga si el celular tiene "reducir movimiento". */
+:root{--suave:cubic-bezier(.16,1,.3,1);--rebote:cubic-bezier(.34,1.56,.64,1);--hoja:cubic-bezier(.32,.72,0,1)}
+@keyframes subeFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes bajaFade{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.45)}100%{opacity:1;transform:scale(1)}}
+@keyframes golpe{0%{transform:scale(1)}40%{transform:scale(1.32)}100%{transform:scale(1)}}
+@keyframes golpeSuave{0%{transform:scale(1)}40%{transform:scale(1.09)}100%{transform:scale(1)}}
+@keyframes precio{0%{transform:scale(1)}35%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes brillo{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+@keyframes filaEntra{from{background-color:rgba(255,215,0,.55)}to{background-color:rgba(255,215,0,.10)}}
+@keyframes filaSale{from{background-color:rgba(255,215,0,.22)}to{background-color:rgba(255,215,0,0)}}
+@keyframes barrido{to{background-size:100% 100%,auto}}
+@keyframes sacudir{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+@keyframes listo{0%{box-shadow:0 0 0 0 rgba(255,215,0,.8)}100%{box-shadow:0 0 0 16px rgba(255,215,0,0)}}
+@keyframes fundido{from{opacity:0}to{opacity:1}}
+@keyframes pieEntra{from{transform:translateY(100%)}to{transform:none}}
+@keyframes girar{to{transform:rotate(360deg)}}
+
+/* Carga: cabecera, buscador y pie entran; esqueleto con brillo mientras llegan los precios */
+header.cab{animation:bajaFade .5s var(--suave) backwards}
+.barra{animation:bajaFade .5s var(--suave) .06s backwards;transition:box-shadow .25s ease}
+.barra.sombra{box-shadow:0 8px 18px -12px rgba(0,0,0,.55)}
+.pie{animation:pieEntra .55s var(--suave) .15s backwards}
+.chips.entra .chip{animation:subeFade .45s var(--suave) backwards;animation-delay:calc(var(--i,0) * 35ms)}
+#catalogo.fundido{animation:fundido .3s ease}
+.esq-cab{height:40px;background:#111;margin-top:18px}
+.esq-fila{display:grid;grid-template-columns:1fr 112px;gap:12px;padding:14px 2px;border-bottom:1px solid var(--linea);align-items:center}
+.esq-l,.esq-paso{border-radius:6px;background:linear-gradient(90deg,#ececec 25%,#f8f8f8 37%,#ececec 63%);background-size:400% 100%;animation:shimmer 1.3s ease infinite}
+.esq-l{height:12px}
+.esq-l.corta{width:55%;margin-top:9px}
+.esq-paso{height:38px;border-radius:999px}
+
+/* Artículos: aparecen en cascada al llegar a la pantalla (una sola vez por artículo) */
+.art.rev{opacity:0;transform:translateY(14px)}
+.art.rev.in{opacity:1;transform:none;transition:opacity .5s var(--suave),transform .5s var(--suave)}
+.art.entra{animation:filaEntra .8s ease-out}
+.art.sale{animation:filaSale .6s ease-out}
+.final,.dto{transform-origin:left center}
+.art.precio-nuevo .final{animation:precio .55s var(--rebote)}
+.art.precio-nuevo .dto{animation:pop .5s var(--rebote)}
+.paso input.golpe{animation:golpe .32s var(--rebote)}
+
+/* Toques: todo responde al dedo (y al mouse en la compu) */
+.btn,.chip,.cerrar,.paso button{transition:transform .15s ease,background-color .2s ease,color .2s ease,box-shadow .25s ease,opacity .2s ease}
+.btn:active,.cerrar:active{transform:scale(.97)}
+.chip:active{transform:scale(.94)}
+.paso button:active{transform:scale(.85)}
+.ficha-escala{transition:transform .35s var(--rebote),box-shadow .2s ease}
+@media (hover:hover){
+  .btn:not(:disabled):not(.deshabilitado):hover,.cerrar:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(0,0,0,.55)}
+  .chip:not(.on):hover{background:var(--fondo)}
+  .art:not(.con):not(.agotado):hover{background-color:rgba(0,0,0,.02)}
+  .paso button:hover{background:rgba(0,0,0,.06)}
+  .art.con .paso button:hover{background:rgba(255,255,255,.16)}
+  .ficha-escala:hover{box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+}
+
+/* Escala: el tramo nuevo se pinta de amarillo de izquierda a derecha, "Lograste" aparece con rebote y chispas */
+.escala tr.alcanzado.nuevo td{background:linear-gradient(var(--amarillo),var(--amarillo)) no-repeat 0 0/0% 100%,var(--blanco);
+  animation:barrido .55s cubic-bezier(.65,0,.35,1) forwards}
+.escala tr.alcanzado.nuevo td:last-child{animation-delay:.16s}
+.logrado{display:inline-block}
+.logrado.pop{animation:pop .55s var(--rebote)}
+.prov-cab .cambia{animation:subeFade .32s var(--suave)}
+.carrusel{transition:height .3s var(--suave)}
+.chispa{position:fixed;width:7px;height:7px;border-radius:50%;z-index:80;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.vuela{position:fixed;width:24px;height:24px;border-radius:50%;background:var(--amarillo);color:var(--negro);border:2px solid var(--negro);
+  font-weight:900;font-size:15px;line-height:20px;text-align:center;z-index:80;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+
+/* Pie: el total cuenta hacia arriba, el texto cambia con fundido y una barrita muestra cuánto falta para el mínimo */
+.pie .tot{display:inline-block;transform-origin:left center}
+.pie .tot.golpe{animation:golpeSuave .4s var(--rebote)}
+.pie .sub.cambia{animation:subeFade .35s var(--suave)}
+.pie-meta{position:absolute;left:0;right:0;top:0;height:3px;background:rgba(255,255,255,.14);opacity:0;transition:opacity .45s ease}
+.pie-meta.ver{opacity:1}
+.pie-meta i{display:block;height:100%;width:0;background:var(--amarillo);box-shadow:0 0 10px rgba(255,215,0,.6);
+  transition:width .6s var(--suave),background-color .35s ease,box-shadow .35s ease}
+.pie-meta.lleno i{background:var(--verde-wa);box-shadow:0 0 12px rgba(37,211,102,.8)}
+#ver.listo{animation:listo .9s ease-out}
+
+/* Tu pedido: sube como hoja desde abajo; filas, totales y botones entran en cascada */
+.hoja{visibility:hidden;transform:translateY(100%);transition:transform .5s var(--hoja),visibility 0s linear .5s}
+.hoja.abierta{visibility:visible;transform:none;transition:transform .5s var(--hoja),visibility 0s}
+.hoja.abierta .tabla-res tbody tr{animation:subeFade .45s var(--suave) backwards}
+.hoja.abierta .ahorro{animation:subeFade .45s var(--suave) .22s backwards}
+.hoja.abierta .pastilla{animation:pop .55s var(--rebote) .2s backwards}
+.hoja.abierta .minimo:not([hidden]),.hoja.abierta .consejo{animation:subeFade .45s var(--suave) .3s backwards}
+.hoja.abierta .minimo.sacude:not([hidden]){animation:sacudir .5s cubic-bezier(.36,.07,.19,.97)}
+.hoja.abierta .acciones .btn{animation:subeFade .45s var(--suave) backwards}
+.hoja.abierta .acciones .btn:nth-child(1){animation-delay:.36s}
+.hoja.abierta .acciones .btn:nth-child(2){animation-delay:.42s}
+.hoja.abierta .acciones .btn:nth-child(3){animation-delay:.48s}
+.btn-wa{position:relative;overflow:hidden}
+.btn-wa::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-130%);
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%)}
+.hoja.abierta .btn-wa:not(.deshabilitado)::after{animation:brillo 1.9s ease-in-out .9s 2}
+#pdf.cargando span::after{content:"";display:inline-block;width:12px;height:12px;margin-left:9px;vertical-align:-1px;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:girar .7s linear infinite}
+
+/* Bienvenida: fondo con fundido, tarjeta que sube con rebote, pasos y fichas uno detrás de otro, brillo en "Unirme" */
+.bienvenida{visibility:hidden;opacity:0;transition:opacity .3s ease,visibility 0s linear .35s}
+.bienvenida.abierta{visibility:visible;opacity:1;transition:opacity .3s ease,visibility 0s}
+.bv-caja{opacity:0;transform:translateY(28px) scale(.96);transition:transform .55s var(--suave),opacity .3s ease}
+.bienvenida.abierta .bv-caja{opacity:1;transform:none}
+.bienvenida.abierta .bv-lista li{animation:subeFade .5s var(--suave) backwards;animation-delay:calc(.18s + var(--i,0) * .08s)}
+.bienvenida.abierta .bv-dto{animation:pop .5s var(--rebote) .5s backwards}
+.bienvenida.abierta .bv-wa{animation:pop .5s var(--rebote) .62s backwards}
+.bienvenida.abierta .bv-comunidad{animation:subeFade .5s var(--suave) .5s backwards}
+.bienvenida.abierta .bv-claves span{animation:pop .45s var(--rebote) backwards;animation-delay:calc(.7s + var(--i,0) * .08s)}
+.bienvenida.abierta .bv-comunidad .btn-wa::after{animation:brillo 2s ease-in-out 1.2s 3}
+.bienvenida.abierta #bv-cerrar{animation:subeFade .5s var(--suave) .78s backwards}
 
 /* Responsive (Toto 19/11): computadora = más ancho y artículos en 2 columnas; celulares chicos = controles más compactos */
 @media (min-width:900px){
@@ -208,6 +322,12 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
   .btn{padding:11px 14px;font-size:13px}
   .pastilla{font-size:16px;padding:8px 16px;gap:12px}
 }
+/* Accesibilidad: con "reducir movimiento" activado en el celular, nada se mueve */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
+  .art.rev{opacity:1;transform:none}
+}
 </style>
 </head>
 <body>
@@ -230,11 +350,21 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 </div>
 
 <main class="envoltura">
-  <div id="catalogo"><p class="vacio">Cargando precios…</p></div>
+  <div id="catalogo" aria-busy="true" aria-label="Cargando precios">
+    <!-- esqueleto con brillo mientras llegan los precios -->
+    <div class="esq-cab"></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+    <div class="esq-fila"><div><div class="esq-l"></div><div class="esq-l corta"></div></div><div class="esq-paso"></div></div>
+  </div>
   <p class="letra-chica" id="pie-datos"></p>
 </main>
 
 <div class="pie">
+  <div class="pie-meta" id="pie-meta" aria-hidden="true"><i></i></div>
   <div class="envoltura">
     <div class="num">
       <div class="tot" id="pie-total">$0</div>
@@ -287,15 +417,15 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
     <div class="bv-cuerpo">
       <!-- Toto 19/11: palabras clave, más visual que de lectura (se tiene que entender de un vistazo) -->
       <ol class="bv-lista">
-        <li><b>Buscá</b> producto / marca</li>
-        <li><b>Elegí</b> la cantidad</li>
-        <li><b>Revisá</b> <span class="bv-dto">descuentos</span> y <span class="bv-final">precio final</span></li>
-        <li>Contamos con un mínimo de <b id="bv-minimo">$35.000</b>. Para confirmar, envialo a
+        <li style="--i:0"><b>Buscá</b> producto / marca</li>
+        <li style="--i:1"><b>Elegí</b> la cantidad</li>
+        <li style="--i:2"><b>Revisá</b> <span class="bv-dto">descuentos</span> y <span class="bv-final">precio final</span></li>
+        <li style="--i:3">Contamos con un mínimo de <b id="bv-minimo">$35.000</b>. Para confirmar, envialo a
           <svg class="bv-wa" width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="WhatsApp"><circle cx="12" cy="12" r="12" fill="#25D366"/><path transform="translate(2.6 2.6) scale(.78)" fill="#fff" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3z"/></svg></li>
       </ol>
       <div class="bv-comunidad">
         <strong>📢 Unite a la Comunidad SIO</strong>
-        <div class="bv-claves"><span>🔥 Ofertas</span><span>📦 Ingresos</span><span>💲 Lista de precios</span></div>
+        <div class="bv-claves"><span style="--i:0">🔥 Ofertas</span><span style="--i:1">📦 Ingresos</span><span style="--i:2">💲 Lista de precios</span></div>
         <a class="btn btn-wa" href="https://chat.whatsapp.com/Bh0sG3CH8xF4R7SqcmQGdY" target="_blank" rel="noopener">UNIRME A LA COMUNIDAD</a>
       </div>
       <button class="btn btn-negro" id="bv-cerrar">VER EL SIMULADOR</button>
@@ -318,6 +448,106 @@ const p0 = n => "$" + Math.round(n).toLocaleString("es-AR");
 const pctTxt = p => String(p).replace(".", ",") + "%";
 const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 const lindo = s => s.toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñ])/g, (m, a, b) => a + b.toUpperCase());
+
+/* ---------- Animaciones (Toto 19/11: "super profesionales") ---------- */
+const reducido = () => !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+const REVELAR = "IntersectionObserver" in window && !reducido();
+// Vuelve a disparar una animación CSS aunque el elemento ya tenga esa clase
+function reanimar(el, cls){ if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+// Número que cuenta hasta el valor nuevo (total del pie y del resumen), con frenada suave
+function contar(el, hasta, ms = 450, desde = el._val){
+  cancelAnimationFrame(el._raf);
+  if (desde === undefined || reducido() || Math.round(desde) === Math.round(hasta)){ el._val = hasta; el.textContent = p0(hasta); return; }
+  const t0 = performance.now();
+  const paso = ahora => {
+    const k = Math.min(1, (ahora - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    el._val = k < 1 ? desde + (hasta - desde) * e : hasta;
+    el.textContent = p0(el._val);
+    if (k < 1) el._raf = requestAnimationFrame(paso);
+  };
+  el._raf = requestAnimationFrame(paso);
+}
+// Chispas con los colores de la marca cuando se logra un tramo nuevo de la escala
+function chispas(el){
+  if (!el || reducido() || !document.body.animate) return;
+  const r = el.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) return;   // fuera de la vista: nada
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2, colores = ["#FFD700", "#000000", "#E60000", "#FFD700", "#FFFFFF"];
+  for (let k = 0; k < 14; k++){
+    const s = document.createElement("i"), ang = k / 14 * Math.PI * 2 + Math.random() * .45, dist = 24 + Math.random() * 26;
+    s.className = "chispa"; s.style.left = (cx - 3.5) + "px"; s.style.top = (cy - 3.5) + "px"; s.style.background = colores[k % colores.length];
+    document.body.appendChild(s);
+    s.animate([{transform: "translate(0,0) scale(1)", opacity: 1},
+               {transform: `translate(${Math.cos(ang) * dist}px,${Math.sin(ang) * dist}px) scale(.2)`, opacity: 0}],
+              {duration: 620 + Math.random() * 260, easing: "cubic-bezier(.2,.8,.2,1)"}).onfinish = () => s.remove();
+  }
+}
+// La primera vez que se carga un artículo, una bolita amarilla "vuela" en arco hasta el total de abajo
+function volarAlPie(desde){
+  const destino = $("#pie-total");
+  if (!desde || reducido() || !document.body.animate){ reanimar(destino, "golpe"); return; }
+  const a = desde.getBoundingClientRect(), b = destino.getBoundingClientRect();
+  const x0 = a.left + a.width / 2 - 12, y0 = a.top + a.height / 2 - 12;
+  const dx = b.left + 26 - (x0 + 12), dy = b.top + b.height / 2 - (y0 + 12);
+  const d = document.createElement("div");
+  d.className = "vuela"; d.textContent = "+"; d.style.left = x0 + "px"; d.style.top = y0 + "px";
+  document.body.appendChild(d);
+  d.animate([
+    {transform: "translate(0,0) scale(.5)", opacity: 0},
+    {transform: "translate(0,-8px) scale(1.12)", opacity: 1, offset: .14},
+    {transform: `translate(${dx * .55}px,${dy * .35 - 70}px) scale(1)`, opacity: 1, offset: .55},
+    {transform: `translate(${dx}px,${dy}px) scale(.4)`, opacity: .3}
+  ], {duration: 720, easing: "cubic-bezier(.45,.05,.35,1)"}).onfinish = () => { d.remove(); reanimar(destino, "golpe"); };
+}
+// Artículos que aparecen al llegar a la pantalla: una sola vez cada uno (al redibujar con + / − no se repite)
+const revelados = new Set();
+let observador = null;
+function prepararRevelado(){
+  if (!REVELAR) return;
+  observador ??= new IntersectionObserver(entradas => {
+    let k = 0;
+    for (const en of entradas){
+      if (!en.isIntersecting) continue;
+      const el = en.target;
+      el.style.transitionDelay = Math.min(k++, 6) * 45 + "ms";       // cascada entre los que entran juntos
+      el.classList.add("in"); revelados.add(el.dataset.cod); observador.unobserve(el);
+      setTimeout(() => { el.style.transitionDelay = ""; }, 900);
+    }
+  }, {rootMargin: "0px 0px -4% 0px"});
+  observador.disconnect();
+  document.querySelectorAll(".art.rev").forEach(el => observador.observe(el));
+}
+// Descuento vigente de cada grupo con lo cargado (para saber qué cambió con cada toque)
+const pctGrupos = () => Object.fromEntries(Object.keys(D.reglas).map(g => {
+  const t = totalesGrupo(g); return [g, pctPara(D.reglas[g].escalones, t.packs, t.unidades)];
+}));
+// Después de redibujar: anima SOLO lo que cambió con este toque
+function animarCambios(a, antes, ahora, pctAntes){
+  if (reducido()) return;
+  const fila = document.querySelector(`.art[data-cod="${CSS.escape(a.cod)}"]`);
+  let origen = null;
+  if (fila){
+    const v = partes(a, antes), n = partes(a, ahora);
+    const ip = fila.querySelector('input[data-tipo="p"]'), iu = fila.querySelector('input[data-tipo="u"]');
+    if (v.pk !== n.pk && ip){ reanimar(ip, "golpe"); origen = ip; }
+    if (v.su !== n.su && iu){ reanimar(iu, "golpe"); origen = iu; }
+    if (!antes && ahora) reanimar(fila, "entra");
+    else if (antes && !ahora) reanimar(fila, "sale");
+  }
+  if (!antes && ahora) volarAlPie(origen || fila); else reanimar($("#pie-total"), "golpe");
+  const pctAhora = pctGrupos();
+  for (const g of Object.keys(pctAhora)){
+    const viejo = pctAntes[g] || 0, nuevo = pctAhora[g] || 0;
+    if (viejo === nuevo) continue;
+    document.querySelectorAll(`.art[data-grupo="${CSS.escape(g)}"]:not(.agotado)`).forEach(f => reanimar(f, "precio-nuevo"));
+    if (nuevo < viejo) continue;
+    document.querySelectorAll(`.escala-bloque[data-grupo="${CSS.escape(g)}"]`).forEach(bloque => {
+      bloque.querySelectorAll("tr.alcanzado").forEach(tr => { if (Number(tr.dataset.pct) > viejo) tr.classList.add("nuevo"); });
+      const pill = bloque.querySelector(".logrado");
+      if (pill){ reanimar(pill, "pop"); setTimeout(() => chispas(pill), 120); }
+    });
+  }
+}
 
 function guardar(){ try { localStorage.setItem(CLAVE, JSON.stringify(carrito)); } catch (e) { /* sin almacenamiento: igual anda */ } }
 function recuperar(){
@@ -408,9 +638,14 @@ function consejos(){
 }
 
 /* ---------- Pantalla ---------- */
+let chipsPrimeraVez = true;
 function pintarChips(){
-  $("#chips").innerHTML = `<button class="chip ${filtroCat ? "" : "on"}" data-cat="">Todos</button>` +
-    D.categorias.map(c => `<button class="chip ${filtroCat === c ? "on" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+  $("#chips").innerHTML = `<button class="chip ${filtroCat ? "" : "on"}" data-cat="" style="--i:0">Todos</button>` +
+    D.categorias.map((c, k) => `<button class="chip ${filtroCat === c ? "on" : ""}" data-cat="${esc(c)}" style="--i:${k + 1}">${esc(c)}</button>`).join("");
+  if (chipsPrimeraVez){   // las marcas entran en cascada solo al abrir la página
+    chipsPrimeraVez = false;
+    const nav = $("#chips"); nav.classList.add("entra"); setTimeout(() => nav.classList.remove("entra"), 1600);
+  }
 }
 
 function paso(a, tipo, valor, etiqueta){
@@ -429,7 +664,7 @@ function filaArticulo(a){
   const precios = pct
     ? `<span class="lista">${p2(a.precio)}</span><span class="final"><span class="pes">$</span>${final.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="dto">-${pctTxt(pct)}</span>`
     : `<span class="final" style="color:var(--negro)"><span class="pes">$</span>${a.precio.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
-  return `<div class="art ${q ? "con" : ""} ${a.sin_stock ? "agotado" : ""}" data-cod="${esc(a.cod)}">
+  return `<div class="art ${q ? "con" : ""} ${a.sin_stock ? "agotado" : ""} ${REVELAR && !revelados.has(a.cod) ? "rev" : ""}" data-cod="${esc(a.cod)}" data-grupo="${esc(a.grupo || "")}">
     <div><div class="nom">${esc(a.nombre)}</div>
       <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}${porUnidad(a) && a.min > 1 && a.min < a.uni ? ` · <b>Mín. ${a.min} u.</b>` : ""}</div>
       ${a.badge ? `<span class="badge">${esc(a.badge)}</span>` : ""}</div>
@@ -448,9 +683,9 @@ function tablaEscala(grupo){
   const actual = pctPara(r.escalones, t.packs, t.unidades);
   const filas = r.escalones.map(e => {
     const ok = (e.tipo === "p" ? t.packs : t.unidades) >= e.desde;
-    return `<tr class="${ok ? "alcanzado" : ""} ${ok && e.pct === actual ? "vigente" : ""}"><td>${esc(e.texto)}</td><td>-${pctTxt(e.pct)}</td></tr>`;
+    return `<tr class="${ok ? "alcanzado" : ""} ${ok && e.pct === actual ? "vigente" : ""}" data-pct="${e.pct}"><td>${esc(e.texto)}</td><td>-${pctTxt(e.pct)}</td></tr>`;
   }).join("");
-  return `<div class="escala-bloque"><div class="escala-tit"><span>Escala por volumen · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  return `<div class="escala-bloque" data-grupo="${esc(grupo)}"><div class="escala-tit"><span>Escala por volumen · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table></div>`;
 }
 
 function pintarCatalogo(){
@@ -483,6 +718,7 @@ function pintarCatalogo(){
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
   armarCarruseles();
+  prepararRevelado();
 }
 
 /* ---------- Carrusel de escalas ---------- */
@@ -499,10 +735,11 @@ function bloqueEscalas(secId, gs){
     <div class="carrusel">${gs.map((g, k) => `<div class="diapo" data-grupo="${esc(g)}" data-titulo="${esc(k === 0 ? "" : tituloEscala(g))}" data-tope="${maxPct(g)}">${tablaEscala(g)}</div>`).join("")}</div></div>`;
 }
 
-function marcarDiapo(escala, i){
+function marcarDiapo(escala, i, animar = false){
   const car = escala.querySelector(".carrusel"), diapos = car.children;
   if (!escala.isConnected || !diapos.length) return;   // tabla vieja: la lista se redibujó mientras se deslizaba
   i = Math.max(0, Math.min(diapos.length - 1, Number.isFinite(i) ? i : 0));
+  const cambio = animar && diapoDe[escala.dataset.sec] !== i;   // el cliente pasó a otra escala: el título cambia con fundido
   diapoDe[escala.dataset.sec] = i;
   const ficha = document.querySelector(`.ficha-escala[data-sec="${CSS.escape(escala.dataset.sec)}"]`);
   if (ficha) ficha.classList.toggle("vuelta", i === diapos.length - 1);   // en la última, la flecha apunta para volver
@@ -513,6 +750,7 @@ function marcarDiapo(escala, i){
     h3.dataset.marca ??= h3.textContent;
     h3.textContent = d.dataset.titulo || h3.dataset.marca;
     if (pill){ pill.textContent = `hasta -${pctTxt(Number(d.dataset.tope))}`; pill.hidden = !Number(d.dataset.tope); }
+    if (cambio){ reanimar(h3, "cambia"); reanimar(pill, "cambia"); }
   }
   car.style.height = diapos[i].offsetHeight + "px";      // el alto acompaña a la escala que se ve
 }
@@ -527,26 +765,44 @@ function armarCarruseles(){
     let espera = null;
     car.addEventListener("scroll", () => {
       clearTimeout(espera);
-      espera = setTimeout(() => { if (car.clientWidth) marcarDiapo(escala, Math.round(car.scrollLeft / car.clientWidth)); }, 60);
+      espera = setTimeout(() => { if (car.clientWidth) marcarDiapo(escala, Math.round(car.scrollLeft / car.clientWidth), true); }, 60);
     }, {passive: true});
   }
   enfocarGrupo = null;
 }
 
+let pieEstado = null, pieLleno = false, pieTimer = null, verAntes = false;
 function pintarPie(){
-  const t = calcular();
-  $("#pie-total").textContent = p0(t.con);
-  const falta = minimoCompra() - t.con;
+  const t = calcular(), min = minimoCompra(), falta = min - t.con, primera = pieEstado === null;
+  const tot = $("#pie-total");
+  contar(tot, t.con, 600, tot._val ?? 0);                 // el total cuenta hacia arriba (o abajo) hasta el valor nuevo
   // Toto 19/11: abajo tiene que decir cuál es el mínimo y cuánto falta
-  $("#pie-sub").innerHTML = !t.filas.length ? `Todavía no elegiste productos${minimoCompra() ? ` · Mínimo ${p0(minimoCompra())}` : ""}`
-    : falta > 0 ? `${totTxt(t.packs, t.sueltas)}<br><span class="falta">Mínimo ${p0(minimoCompra())} · te faltan ${p0(falta)}</span>`
+  const sub = $("#pie-sub"), estado = !t.filas.length ? "vacio" : falta > 0 ? "falta" : "ok";
+  sub.innerHTML = estado === "vacio" ? `Todavía no elegiste productos${min ? ` · Mínimo ${p0(min)}` : ""}`
+    : estado === "falta" ? `${totTxt(t.packs, t.sueltas)}<br><span class="falta">Mínimo ${p0(min)} · te faltan ${p0(falta)}</span>`
     : `${totTxt(t.packs, t.sueltas)}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`;
-  $("#ver").disabled = !t.filas.length;
+  if (!primera && estado !== pieEstado) reanimar(sub, "cambia");
+  // Barrita de progreso hacia el mínimo: amarilla mientras falta; verde un momento al llegar y después se esconde
+  const meta = $("#pie-meta"), barra = meta.firstElementChild;
+  clearTimeout(pieTimer);
+  if (estado === "vacio" || !min){ meta.classList.remove("ver", "lleno"); barra.style.width = "0%"; pieLleno = false; }
+  else if (estado === "falta"){ meta.classList.add("ver"); meta.classList.remove("lleno"); barra.style.width = Math.max(3, t.con / min * 100) + "%"; pieLleno = false; }
+  else {
+    barra.style.width = "100%"; meta.classList.add("lleno");
+    if (!pieLleno && !primera){ meta.classList.add("ver"); pieTimer = setTimeout(() => meta.classList.remove("ver"), 1700); }
+    else meta.classList.remove("ver");
+    pieLleno = true;
+  }
+  pieEstado = estado;
+  const ver = $("#ver"), hay = !!t.filas.length;
+  ver.disabled = !hay;
+  if (hay && !verAntes && !primera) reanimar(ver, "listo");   // "VER MI PEDIDO" se enciende con un pulso
+  verAntes = hay;
 }
 
 function pintarResumen(){
   const t = calcular();
-  $("#res-filas").innerHTML = t.filas.map(f => `<tr>
+  $("#res-filas").innerHTML = t.filas.map((f, k) => `<tr style="animation-delay:${(0.12 + Math.min(k, 12) * 0.045).toFixed(3)}s">
       <td class="fuerte">${esc(cantCorta(f.a, f.u))}</td>
       <td class="izq">${esc(f.a.nombre)}<span class="chico">Cód. ${esc(f.a.cod)}</span></td>
       <td>${p0(f.a.precio)}</td>
@@ -575,9 +831,11 @@ function cambiar(cod, u){            // u = unidades
   if (!porUnidad(a)) u = Math.round(u / a.uni) * a.uni;          // sin venta por unidad: packs enteros
   // Mínimo de venta de Chess (19/11: fideos Sol Pampeano = 5 u.): subiendo salta al mínimo, bajando de él vuelve a 0
   else if (a.min > 1 && u > 0 && u < a.min) u = u > antes ? a.min : 0;
+  const pctAntes = pctGrupos();                                   // para animar solo lo que cambie con este toque
   if (u) carrito[cod] = u; else delete carrito[cod];
   enfocarGrupo = a.grupo;
   refrescar();
+  if (u !== antes) animarCambios(a, antes, u, pctAntes);
   const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"] input`);
   if (el && document.activeElement !== el) el.blur();
 }
@@ -682,6 +940,7 @@ async function pdfMovil(jsPDF, t, logo, marca){
 async function descargarPdf(){
   const t = calcular(); if (!t.filas.length) return;
   const boton = $("#pdf"), rotulo = boton.querySelector("span"); boton.disabled = true; rotulo.textContent = "Armando el PDF…";
+  boton.classList.add("cargando");
   try {
     const {jsPDF} = window.jspdf;
     const [logo, marca] = await Promise.all([aDataUrl("assets/logo_cabecera.png"), aDataUrl("assets/marca_agua.png")]);
@@ -762,7 +1021,7 @@ async function descargarPdf(){
   } catch (e) {
     alert("No se pudo armar el PDF. Probá de nuevo o mandá el pedido por WhatsApp.");
   } finally {
-    boton.disabled = false; rotulo.textContent = "DESCARGAR TU PEDIDO";
+    boton.disabled = false; rotulo.textContent = "DESCARGAR TU PEDIDO"; boton.classList.remove("cargando");
   }
 }
 
@@ -774,7 +1033,8 @@ $("#catalogo").addEventListener("click", e => {
     const escala = document.querySelector(`.escala[data-sec="${CSS.escape(f.dataset.sec)}"]`);
     const car = escala.querySelector(".carrusel"), n = car.children.length;
     const sig = ((diapoDe[f.dataset.sec] || 0) + 1) % n;
-    car.scrollTo({left: sig * car.clientWidth, behavior: "smooth"});
+    marcarDiapo(escala, sig, true);     // el título y el alto cambian en el acto, sin esperar a que termine de deslizar
+    car.scrollTo({left: sig * car.clientWidth, behavior: reducido() ? "auto" : "smooth"});
     return;
   }
   const b = e.target.closest("button[data-acc]"); if (!b) return;
@@ -795,10 +1055,19 @@ $("#catalogo").addEventListener("keydown", e => {
 $("#chips").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if (!b) return;
   filtroCat = b.dataset.cat || null; pintarChips(); pintarCatalogo();
-  window.scrollTo({top: $(".barra").offsetTop, behavior: "smooth"});
+  if (!reducido()) reanimar($("#catalogo"), "fundido");      // la lista cambia con un fundido suave
+  window.scrollTo({top: $(".barra").offsetTop, behavior: reducido() ? "auto" : "smooth"});
 });
 $("#buscar").addEventListener("input", e => { filtroTxt = e.target.value; pintarCatalogo(); });
-$("#ver").addEventListener("click", () => { pintarResumen(); $("#hoja").classList.add("abierta"); $("#hoja").scrollTop = 0; document.body.style.overflow = "hidden"; });
+$("#ver").addEventListener("click", () => {
+  pintarResumen(); const t = calcular();
+  $("#hoja").scrollTop = 0; $("#hoja").classList.add("abierta"); document.body.style.overflow = "hidden";
+  contar($("#res-total"), t.con, 900, 0); contar($("#res-ahorro"), t.ahorro, 900, 0);   // los totales cuentan desde $0
+});
+// WhatsApp bloqueado por el mínimo: al tocarlo no abre nada y el aviso se sacude
+$("#enviar").addEventListener("click", e => {
+  if ($("#enviar").classList.contains("deshabilitado")){ e.preventDefault(); reanimar($("#minimo"), "sacude"); }
+});
 // Toto 19/11: se vuelve a la lista solo con "Modificar pedido" de ARRIBA (el de abajo era redundante)
 function cerrarHoja(){ $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; }
 $("#cerrar").addEventListener("click", cerrarHoja);
@@ -828,6 +1097,13 @@ const fijarAltoBarra = () => {
 fijarAltoBarra();
 if (window.ResizeObserver) new ResizeObserver(fijarAltoBarra).observe($(".barra"));
 window.addEventListener("resize", fijarAltoBarra);
+// El buscador toma una sombra suave apenas se empieza a bajar (se nota que queda flotando)
+let sombraPendiente = false;
+window.addEventListener("scroll", () => {
+  if (sombraPendiente) return;
+  sombraPendiente = true;
+  requestAnimationFrame(() => { sombraPendiente = false; $(".barra").classList.toggle("sombra", window.scrollY > 8); });
+}, {passive: true});
 (async () => {
   try {
     const r = await fetch("datos.json?t=" + Date.now(), {cache: "no-store"});
@@ -840,6 +1116,7 @@ window.addEventListener("resize", fijarAltoBarra);
   const f = new Date(D.actualizado);
   $("#pie-datos").textContent = `Precios de lista general, finales con IVA e Imp. internos. Actualizado el ${f.toLocaleDateString("es-AR")} a las ${f.toLocaleTimeString("es-AR", {hour: "2-digit", minute: "2-digit"})}.`;
   recuperar(); pintarChips(); refrescar();
+  $("#catalogo").removeAttribute("aria-busy"); $("#catalogo").removeAttribute("aria-label");
   abrirBienvenida();
 })();
 
