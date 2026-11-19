@@ -567,6 +567,8 @@ function recuperar(){
 // Se carga por unidad (además de por pack) si la escala de su grupo se mide en unidades: Easy Clean, Sol Pampeano, Derna.
 const porUnidad = a => !!(a.grupo && D.reglas[a.grupo] && D.reglas[a.grupo].escalones.some(e => e.tipo === "u"));
 const partes = (a, u) => ({pk: Math.floor(u / a.uni), su: u % a.uni});
+// Código para MOSTRAR: los artículos de la lista sin código de Chess traen una clave interna ("sc-…") que no se muestra (19/11)
+const codVisible = a => a.sin_cod ? "" : String(a.cod).split("~")[0];
 function cantTxt(a, u){          // "2 packs + 3 u."
   const {pk, su} = partes(a, u), out = [];
   if (pk) out.push(`${pk} pack${pk > 1 ? "s" : ""}`);
@@ -666,7 +668,8 @@ function filaArticulo(a){
     : `<span class="final" style="color:var(--negro)"><span class="pes">$</span>${a.precio.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
   return `<div class="art ${q ? "con" : ""} ${a.sin_stock ? "agotado" : ""} ${REVELAR && !revelados.has(a.cod) ? "rev" : ""}" data-cod="${esc(a.cod)}" data-grupo="${esc(a.grupo || "")}">
     <div><div class="nom">${esc(a.nombre)}</div>
-      <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}${porUnidad(a) && a.min > 1 && a.min < a.uni ? ` · <b>Mín. ${a.min} u.</b>` : ""}</div>
+      <div class="meta">${[codVisible(a) && `Cód. ${esc(codVisible(a))}`, a.uni > 1 && `Pack x${a.uni} u. · ${p2(final / a.uni)} c/u`,
+        porUnidad(a) && a.min > 1 && a.min < a.uni && `<b>Mín. ${a.min} u.</b>`].filter(Boolean).join(" · ")}</div>
       ${a.badge ? `<span class="badge">${esc(a.badge)}</span>` : ""}</div>
     ${a.sin_stock ? `<div class="sin-stock">SIN STOCK</div>`
       : porUnidad(a) && a.uni > 1
@@ -804,7 +807,7 @@ function pintarResumen(){
   const t = calcular();
   $("#res-filas").innerHTML = t.filas.map((f, k) => `<tr style="animation-delay:${(0.12 + Math.min(k, 12) * 0.045).toFixed(3)}s">
       <td class="fuerte">${esc(cantCorta(f.a, f.u))}</td>
-      <td class="izq">${esc(f.a.nombre)}<span class="chico">Cód. ${esc(f.a.cod)}</span></td>
+      <td class="izq">${esc(f.a.nombre)}${codVisible(f.a) ? `<span class="chico">Cód. ${esc(codVisible(f.a))}</span>` : ""}</td>
       <td>${p0(f.a.precio)}</td>
       <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
       <td class="fuerte">${p0(f.con)}</td></tr>`).join("");
@@ -844,7 +847,7 @@ function cambiar(cod, u){            // u = unidades
 function mensaje(){
   const t = calcular();
   const hoy = new Date().toLocaleDateString("es-AR");
-  const lineas = t.filas.map(f => `• ${cantTxt(f.a, f.u)} ${f.a.nombre} (${f.a.cod})${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
+  const lineas = t.filas.map(f => `• ${cantTxt(f.a, f.u)} ${f.a.nombre}${codVisible(f.a) ? ` (${codVisible(f.a)})` : ""}${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
   return ["Hola! Armé este pedido en el simulador de SIO GLOBAL:", "", ...lineas, "",
     `*Total: ${p0(t.con)}*`, t.ahorro >= 1 ? `Ahorro: ${p0(t.ahorro)}` : null,
     `(${totTxt(t.packs, t.sueltas)} · precios de lista general del ${hoy})`].filter(x => x !== null).join("\n");
@@ -917,7 +920,8 @@ async function pdfMovil(jsPDF, t, logo, marca){
     } else doc.text(cant, (X0 + C1) / 2, medio, {align: "center"});
     doc.setFontSize(10.5); doc.text(lineas, C1 + 8, y + 18, {lineHeightFactor: 1.2});
     doc.setFont(F, "normal"); doc.setFontSize(8.5); doc.setTextColor(95, 95, 95);
-    doc.text(`Cód. ${f.a.cod} · ${p0(f.a.precio)} x pack${f.pct ? ` · -${pctTxt(f.pct)}` : ""}`, C1 + 8, y + 18 + lineas.length * 12.5 + 1);
+    doc.text([codVisible(f.a) && `Cód. ${codVisible(f.a)}`, `${p0(f.a.precio)} x pack`, f.pct && `-${pctTxt(f.pct)}`].filter(Boolean).join(" · "),
+      C1 + 8, y + 18 + lineas.length * 12.5 + 1);
     doc.setTextColor(0, 0, 0); doc.setFont(F, "bold"); doc.setFontSize(11.5);
     doc.text(p0(f.con), X1 - 8, medio, {align: "right"});
     y += h;
