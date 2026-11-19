@@ -51,9 +51,9 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px;text-align:center;line-height:1.15}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 
-/* Escala (estética original de tabla). Al bajar, acompaña el scroll pegada debajo del buscador y se SUELTA a la mitad de la
-   lista de ese proveedor: queda ahí y la página sigue (Toto 19/11). Lo logra .mitad1, que envuelve la tabla y la primera
-   mitad de los artículos: una tabla sticky no puede salir de su contenedor. */
+/* Escala (estética original de tabla). Al bajar, acompaña el scroll pegada debajo del buscador y se SUELTA al llegar a
+   los últimos 4 artículos de ese proveedor (Toto 19/11; antes, a la mitad): queda ahí y la página sigue. Lo logra
+   .mitad1, que envuelve la tabla y todos los artículos menos los últimos 4: una tabla sticky no sale de su contenedor. */
 .escala{position:sticky;top:calc(var(--barra-alto,104px) + env(safe-area-inset-top,0px));z-index:15;background:var(--blanco);
   border:1.5px solid var(--negro);border-top:0;font-size:12.5px;box-shadow:0 6px 10px -8px rgba(0,0,0,.45)}
 .escala table{width:100%;border-collapse:collapse}
@@ -464,7 +464,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "24062eded1";
+const VERSION_PAGINA = "d114b4ceb5";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -746,8 +746,10 @@ function pintarCatalogo(){
     const cab = `<div class="prov-cab" data-tope="${tope}"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}${botones}</div>`;
     html += `<section class="prov" id="${esc(secId)}">
       ${conEscala.length
-        ? (() => {   // título + tabla acompañan solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
-            const mitad = Math.max(1, Math.ceil(arts.length / 4) * 2);
+        ? (() => {   // título + tabla acompañan la lista hasta los ÚLTIMOS 4 artículos (Toto 19/11; antes, hasta la mitad).
+            // En la PC (2 columnas) el corte va entre filas completas, para no desarmar las columnas: últimos 4 o 5.
+            let mitad = Math.max(0, arts.length - 4);
+            if (window.matchMedia("(min-width:900px)").matches) mitad -= mitad % 2;
             return `<div class="mitad1"><div class="fijo" data-sec="${esc(secId)}">${cab}<div class="plegable">${bloqueEscalas(secId, conEscala)}</div></div>
               <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
               <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
