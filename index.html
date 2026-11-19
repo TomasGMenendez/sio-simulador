@@ -251,6 +251,28 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 .vuela{position:fixed;width:24px;height:24px;border-radius:50%;background:var(--amarillo);color:var(--negro);border:2px solid var(--negro);
   font-weight:900;font-size:15px;line-height:20px;text-align:center;z-index:80;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 
+/* Escala plegable (Toto 19/11): al bajar, la tabla se pliega y queda el título con el descuento máximo. La ficha ›
+   se corre a la derecha y sube desde abajo una ▾ que la vuelve a desplegar. Mientras se pliega, un margen ocupa
+   exactamente su lugar: la página no salta (en iPhone no hay "scroll anchoring" que lo corrija). */
+.fijo{transition:margin-bottom .4s var(--suave)}
+.plegable{overflow:hidden;transition:height .4s var(--suave),opacity .3s ease}
+.fijo.plegado .plegable{opacity:0}
+.fijo.sin-trans,.fijo.sin-trans *{transition:none!important}
+.cab-botones{position:relative;flex:none;width:30px;height:30px;border-radius:50%;overflow:hidden;
+  transition:width .3s var(--suave),margin .3s var(--suave)}
+.cab-botones.solo{width:0;margin-left:-10px}                     /* una sola escala: el lugar aparece al plegar */
+.fijo.plegado .cab-botones.solo{width:30px;margin-left:0}
+/* medidas fijas: un <button> absoluto sin alto propio toma el de su contenido (22 px) y quedaba corrido al redibujar */
+.cab-botones .ficha-escala,.cab-botones .desplegar{position:absolute;top:0;left:0;width:30px;height:30px;margin:0}
+.desplegar{border-radius:50%;background:var(--blanco);color:var(--negro);display:grid;place-items:center;padding:0;
+  transform:translateY(115%);opacity:0;pointer-events:none;transition:transform .3s ease-in,opacity .2s ease}
+.fijo.plegado .ficha-escala{transform:translateX(120%);opacity:0;pointer-events:none;transition:transform .3s ease-in,opacity .22s ease}
+.fijo.plegado .desplegar{transform:none;opacity:1;pointer-events:auto;transition:transform .45s var(--rebote) .16s,opacity .25s ease .16s}
+.fijo.plegado.recien .desplegar svg{animation:senala .9s ease-in-out .7s 2}      /* "señala para abajo" al aparecer */
+.desplegar.aviso{animation:avisoTramo .7s ease-out}                                /* tramo logrado con la tabla plegada */
+@keyframes senala{0%,100%{transform:none}50%{transform:translateY(3px)}}
+@keyframes avisoTramo{0%{background:var(--amarillo);transform:scale(.75)}60%{background:var(--amarillo);transform:scale(1)}100%{background:var(--blanco)}}
+
 /* Pie: el total cuenta hacia arriba, el texto cambia con fundido y una barrita muestra cuánto falta para el mínimo */
 .pie .tot{display:inline-block;transform-origin:left center}
 .pie .tot.golpe{animation:golpeSuave .4s var(--rebote)}
@@ -543,8 +565,10 @@ function animarCambios(a, antes, ahora, pctAntes){
     if (nuevo < viejo) continue;
     document.querySelectorAll(`.escala-bloque[data-grupo="${CSS.escape(g)}"]`).forEach(bloque => {
       bloque.querySelectorAll("tr.alcanzado").forEach(tr => { if (Number(tr.dataset.pct) > viejo) tr.classList.add("nuevo"); });
-      const pill = bloque.querySelector(".logrado");
-      if (pill){ reanimar(pill, "pop"); setTimeout(() => chispas(pill), 120); }
+      const pill = bloque.querySelector(".logrado"), fijo = bloque.closest(".fijo");
+      if (fijo?.classList.contains("plegado")){       // tabla plegada: avisa la ▾ ("desplegá, lograste un tramo")
+        const b = fijo.querySelector(".desplegar"); reanimar(b, "aviso"); setTimeout(() => chispas(b), 120);
+      } else if (pill){ reanimar(pill, "pop"); setTimeout(() => chispas(pill), 120); }
     });
   }
 }
@@ -705,14 +729,19 @@ function pintarCatalogo(){
     const cuantos = g => arts.filter(a => a.grupo === g).length;
     const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1).sort((x, y) => cuantos(y) - cuantos(x));
     const secId = "cat-" + norm(cat).replace(/[^A-Z0-9]/g, "_");
-    // Título centrado: MARCA + "hasta -X%" + (si hay varias escalas) ficha blanca con flecha para pasar a la otra (Toto 19/11)
-    const cab = `<div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}${
-      conEscala.length > 1 ? `<button class="ficha-escala" data-sec="${esc(secId)}" aria-label="Ver la otra escala de ${esc(cat)}">›</button>` : ""}</div>`;
+    // Título centrado: MARCA + "hasta -X%" + ranura de botones: la ficha blanca › (si hay varias escalas) y la ▾ que
+    // despliega la escala cuando está plegada (Toto 19/11)
+    const botones = !conEscala.length ? "" : `<span class="cab-botones ${conEscala.length > 1 ? "" : "solo"}">${
+      conEscala.length > 1 ? `<button class="ficha-escala" data-sec="${esc(secId)}" aria-label="Ver la otra escala de ${esc(cat)}">›</button>` : ""}<button
+        class="desplegar" data-sec="${esc(secId)}" aria-label="Ver la escala de descuentos de ${esc(cat)}" aria-expanded="true"><svg width="15" height="15"
+        viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"
+        stroke-linejoin="round"/></svg></button></span>`;
+    const cab = `<div class="prov-cab" data-tope="${tope}"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}${botones}</div>`;
     html += `<section class="prov" id="${esc(secId)}">
       ${conEscala.length
         ? (() => {   // título + tabla acompañan solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
             const mitad = Math.max(1, Math.ceil(arts.length / 4) * 2);
-            return `<div class="mitad1"><div class="fijo">${cab}${bloqueEscalas(secId, conEscala)}</div>
+            return `<div class="mitad1"><div class="fijo" data-sec="${esc(secId)}">${cab}<div class="plegable">${bloqueEscalas(secId, conEscala)}</div></div>
               <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
               <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
           })()
@@ -721,7 +750,65 @@ function pintarCatalogo(){
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
   armarCarruseles();
+  aplicarPlegado();          // al redibujar con cada + / − la escala que estaba plegada sigue plegada (sin animar)
   prepararRevelado();
+}
+
+/* ---------- Escala plegable (Toto 19/11) ---------- */
+// Al bajar, la tabla se pliega y queda el título con el descuento máximo; la ▾ la despliega; al volver arriba se despliega sola.
+const plegadoDe = {}, abiertoEn = {};   // sección -> plegada sí/no; sección -> scrollY donde el cliente la desplegó a mano
+function tituloPlegado(fijo, plegado, animar){
+  const cab = fijo.querySelector(".prov-cab"), h3 = cab.querySelector("h3"), pill = cab.querySelector(".pill-roja");
+  h3.dataset.marca ??= h3.textContent;
+  const antes = h3.textContent + (pill ? pill.textContent : "");
+  if (plegado){        // plegada: la MARCA con su descuento máximo
+    h3.textContent = h3.dataset.marca;
+    if (pill){ pill.textContent = `hasta -${pctTxt(Number(cab.dataset.tope))}`; pill.hidden = !Number(cab.dataset.tope); }
+  } else {             // desplegada: el título de la escala que se está viendo (carrusel)
+    const escala = fijo.querySelector(".escala[data-sec]");
+    if (escala) marcarDiapo(escala, diapoDe[escala.dataset.sec] || 0);
+  }
+  if (animar && antes !== h3.textContent + (pill ? pill.textContent : "")){ reanimar(h3, "cambia"); reanimar(pill, "cambia"); }
+}
+function plegar(fijo, plegado, animar = true){
+  const sec = fijo.dataset.sec, cont = fijo.querySelector(".plegable");
+  if (!cont || fijo.classList.contains("plegado") === plegado) return;
+  plegadoDe[sec] = plegado;
+  const suave = animar && !reducido();
+  if (!suave) fijo.classList.add("sin-trans");
+  const alto = cont.scrollHeight;                            // alto real de la tabla (aunque esté plegada)
+  if (plegado){
+    cont.style.height = alto + "px"; void cont.offsetHeight;  // desde su alto actual...
+    fijo.classList.add("plegado");
+    cont.style.height = "0px";                               // ...hasta 0,
+    fijo.style.marginBottom = alto + "px";                   // y su lugar lo ocupa un margen: nada se mueve
+    if (suave){ fijo.classList.add("recien"); setTimeout(() => fijo.classList.remove("recien"), 2700); }
+  } else {
+    fijo.classList.remove("plegado", "recien");
+    cont.style.height = alto + "px";
+    fijo.style.marginBottom = "0px";
+    // terminada la animación vuelve a "auto": el carrusel cambia de alto según la escala que se ve
+    const fin = () => { if (!fijo.classList.contains("plegado")) cont.style.height = ""; };
+    if (suave) setTimeout(fin, 430); else fin();
+  }
+  fijo.querySelector(".desplegar")?.setAttribute("aria-expanded", String(!plegado));
+  tituloPlegado(fijo, plegado, suave);
+  if (!suave){ void fijo.offsetHeight; fijo.classList.remove("sin-trans"); }
+}
+function aplicarPlegado(){
+  for (const fijo of document.querySelectorAll(".fijo")) if (plegadoDe[fijo.dataset.sec]) plegar(fijo, true, false);
+}
+// En cada scroll: si la tabla ya quedó pegada debajo del buscador y el cliente baja, se pliega; si vuelve al comienzo
+// de esa marca, se despliega sola. Si la desplegó a mano, se vuelve a plegar recién después de bajar 140 px más.
+let ultimoY = window.scrollY;
+function revisarPlegado(){
+  const y = window.scrollY, bajando = y > ultimoY + 1, tope = $(".barra").offsetHeight;
+  for (const fijo of document.querySelectorAll(".fijo")){
+    const sec = fijo.dataset.sec, pegada = fijo.parentElement.getBoundingClientRect().top < tope - 2;
+    if (!pegada){ if (plegadoDe[sec]) plegar(fijo, false); delete abiertoEn[sec]; continue; }
+    if (bajando && !plegadoDe[sec] && (abiertoEn[sec] === undefined || y - abiertoEn[sec] > 140)) plegar(fijo, true);
+  }
+  ultimoY = y;
 }
 
 /* ---------- Carrusel de escalas ---------- */
@@ -746,9 +833,10 @@ function marcarDiapo(escala, i, animar = false){
   diapoDe[escala.dataset.sec] = i;
   const ficha = document.querySelector(`.ficha-escala[data-sec="${CSS.escape(escala.dataset.sec)}"]`);
   if (ficha) ficha.classList.toggle("vuelta", i === diapos.length - 1);   // en la última, la flecha apunta para volver
-  // El título acompaña a la escala que se ve (Toto 19/11): la principal muestra la marca; las otras, su propio nombre y su tope
-  const cab = escala.closest(".fijo")?.querySelector(".prov-cab");
-  if (cab){
+  // El título acompaña a la escala que se ve (Toto 19/11): la principal muestra la marca; las otras, su propio nombre y su tope.
+  // Con la escala plegada el título queda en la marca con su descuento máximo (lo maneja tituloPlegado).
+  const fijo = escala.closest(".fijo"), cab = fijo?.querySelector(".prov-cab");
+  if (cab && !fijo.classList.contains("plegado")){
     const h3 = cab.querySelector("h3"), pill = cab.querySelector(".pill-roja"), d = diapos[i];
     h3.dataset.marca ??= h3.textContent;
     h3.textContent = d.dataset.titulo || h3.dataset.marca;
@@ -835,9 +923,15 @@ function cambiar(cod, u){            // u = unidades
   // Mínimo de venta de Chess (19/11: fideos Sol Pampeano = 5 u.): subiendo salta al mínimo, bajando de él vuelve a 0
   else if (a.min > 1 && u > 0 && u < a.min) u = u > antes ? a.min : 0;
   const pctAntes = pctGrupos();                                   // para animar solo lo que cambie con este toque
+  // La fila que se tocó tiene que quedar QUIETA bajo el dedo: al redibujar, la tabla de arriba puede cambiar de alto
+  // (otra escala, "Lograste", plegada o no) y empujaría todo. Se mide antes y después y se compensa el scroll (19/11).
+  const filaTop = () => { const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"]`); return el ? el.getBoundingClientRect().top : null; };
+  const ancla = filaTop();
   if (u) carrito[cod] = u; else delete carrito[cod];
   enfocarGrupo = a.grupo;
   refrescar();
+  const ahora = filaTop();
+  if (ancla !== null && ahora !== null && Math.abs(ahora - ancla) > 0.5) window.scrollBy(0, ahora - ancla);
   if (u !== antes) animarCambios(a, antes, u, pctAntes);
   const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"] input`);
   if (el && document.activeElement !== el) el.blur();
@@ -1032,6 +1126,13 @@ async function descargarPdf(){
 /* ---------- Eventos ---------- */
 const artDe = el => D.articulos.find(a => a.cod === el.closest(".art").dataset.cod);
 $("#catalogo").addEventListener("click", e => {
+  const dsp = e.target.closest(".desplegar");
+  if (dsp){   // ▾: despliega la escala plegada (y no se vuelve a plegar hasta que el cliente baje 140 px más)
+    const fijo = dsp.closest(".fijo");
+    abiertoEn[fijo.dataset.sec] = window.scrollY;
+    plegar(fijo, false);
+    return;
+  }
   const f = e.target.closest(".ficha-escala");
   if (f){   // ficha blanca del título: pasa a la escala siguiente y, desde la última, vuelve a la primera
     const escala = document.querySelector(`.escala[data-sec="${CSS.escape(f.dataset.sec)}"]`);
@@ -1058,7 +1159,10 @@ $("#catalogo").addEventListener("keydown", e => {
 });
 $("#chips").addEventListener("click", e => {
   const b = e.target.closest(".chip"); if (!b) return;
-  filtroCat = b.dataset.cat || null; pintarChips(); pintarCatalogo();
+  filtroCat = b.dataset.cat || null;
+  for (const k of Object.keys(plegadoDe)) delete plegadoDe[k];      // la lista vuelve arriba: escalas desplegadas
+  for (const k of Object.keys(abiertoEn)) delete abiertoEn[k];
+  pintarChips(); pintarCatalogo();
   if (!reducido()) reanimar($("#catalogo"), "fundido");      // la lista cambia con un fundido suave
   window.scrollTo({top: $(".barra").offsetTop, behavior: reducido() ? "auto" : "smooth"});
 });
@@ -1106,7 +1210,7 @@ let sombraPendiente = false;
 window.addEventListener("scroll", () => {
   if (sombraPendiente) return;
   sombraPendiente = true;
-  requestAnimationFrame(() => { sombraPendiente = false; $(".barra").classList.toggle("sombra", window.scrollY > 8); });
+  requestAnimationFrame(() => { sombraPendiente = false; $(".barra").classList.toggle("sombra", window.scrollY > 8); revisarPlegado(); });
 }, {passive: true});
 (async () => {
   try {
