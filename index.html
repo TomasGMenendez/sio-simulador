@@ -252,22 +252,26 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
   font-weight:900;font-size:15px;line-height:20px;text-align:center;z-index:80;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 
 /* Escala plegable (Toto 19/11): al bajar, la tabla se pliega y queda el título con el descuento máximo. La ficha ›
-   se corre a la derecha y sube desde abajo una ▾ que la vuelve a desplegar. Mientras se pliega, un margen ocupa
-   exactamente su lugar: la página no salta (en iPhone no hay "scroll anchoring" que lo corrija). */
+   (otra escala) se corre a la IZQUIERDA y a su lado sube desde abajo una ▾ que la vuelve a desplegar: quedan los dos
+   a la vista. Mientras se pliega, un margen ocupa exactamente su lugar: la página no salta (en iPhone no hay "scroll
+   anchoring" que lo corrija). */
 .fijo{transition:margin-bottom .4s var(--suave)}
 .plegable{overflow:hidden;transition:height .4s var(--suave),opacity .3s ease}
 .fijo.plegado .plegable{opacity:0}
 .fijo.sin-trans,.fijo.sin-trans *{transition:none!important}
-.cab-botones{position:relative;flex:none;width:30px;height:30px;border-radius:50%;overflow:hidden;
-  transition:width .3s var(--suave),margin .3s var(--suave)}
-.cab-botones.solo{width:0;margin-left:-10px}                     /* una sola escala: el lugar aparece al plegar */
+/* ranura de botones: 30 px (›) que al plegar crece a 66 px (› corrida a la izquierda + ▾); con una sola escala, de 0 a 30 px (▾) */
+.cab-botones{position:relative;flex:none;width:30px;height:30px;border-radius:15px;overflow:hidden;
+  transition:width .38s var(--suave),margin .38s var(--suave)}
+.fijo.plegado .cab-botones{width:66px}
+.cab-botones.solo{width:0;margin-left:-10px}
 .fijo.plegado .cab-botones.solo{width:30px;margin-left:0}
 /* medidas fijas: un <button> absoluto sin alto propio toma el de su contenido (22 px) y quedaba corrido al redibujar */
 .cab-botones .ficha-escala,.cab-botones .desplegar{position:absolute;top:0;left:0;width:30px;height:30px;margin:0}
+.cab-botones .desplegar{left:36px}
+.cab-botones.solo .desplegar{left:0}
 .desplegar{border-radius:50%;background:var(--blanco);color:var(--negro);display:grid;place-items:center;padding:0;
   transform:translateY(115%);opacity:0;pointer-events:none;transition:transform .3s ease-in,opacity .2s ease}
-.fijo.plegado .ficha-escala{transform:translateX(120%);opacity:0;pointer-events:none;transition:transform .3s ease-in,opacity .22s ease}
-.fijo.plegado .desplegar{transform:none;opacity:1;pointer-events:auto;transition:transform .45s var(--rebote) .16s,opacity .25s ease .16s}
+.fijo.plegado .desplegar{transform:none;opacity:1;pointer-events:auto;transition:transform .45s var(--rebote) .2s,opacity .25s ease .2s}
 .fijo.plegado.recien .desplegar svg{animation:senala .9s ease-in-out .7s 2}      /* "señala para abajo" al aparecer */
 .desplegar.aviso{animation:avisoTramo .7s ease-out}                                /* tramo logrado con la tabla plegada */
 @keyframes senala{0%,100%{transform:none}50%{transform:translateY(3px)}}
@@ -784,6 +788,14 @@ function plegar(fijo, plegado, animar = true){
     fijo.style.marginBottom = alto + "px";                   // y su lugar lo ocupa un margen: nada se mueve
     if (suave){ fijo.classList.add("recien"); setTimeout(() => fijo.classList.remove("recien"), 2700); }
   } else {
+    // Si mientras estuvo plegada la tabla cambió de alto (otra escala, "Lograste"), primero se iguala el margen al alto
+    // nuevo, compensando el scroll si está pegada arriba: así al desplegar no se mueve nada.
+    const margen = parseFloat(fijo.style.marginBottom) || 0, dif = alto - margen;
+    if (margen && Math.abs(dif) > 0.5){
+      fijo.classList.add("sin-trans"); fijo.style.marginBottom = alto + "px"; void fijo.offsetHeight;
+      if (suave) fijo.classList.remove("sin-trans");
+      if (estaPegada(fijo)) window.scrollBy(0, dif);
+    }
     fijo.classList.remove("plegado", "recien");
     cont.style.height = alto + "px";
     fijo.style.marginBottom = "0px";
@@ -795,6 +807,20 @@ function plegar(fijo, plegado, animar = true){
   tituloPlegado(fijo, plegado, suave);
   if (!suave){ void fijo.offsetHeight; fijo.classList.remove("sin-trans"); }
 }
+// El cliente despliega a mano la escala plegada mostrando la escala k del carrusel: 0 = la del título (▾), 1 = la otra (›).
+// No se vuelve a plegar hasta que baje 140 px más.
+function desplegarEn(fijo, k){
+  const escala = fijo.querySelector(".escala[data-sec]");
+  if (escala){                                   // con la tabla oculta se elige la escala sin que se vea el cambio
+    const car = escala.querySelector(".carrusel");
+    k = Math.min(k, car.children.length - 1);
+    marcarDiapo(escala, k);
+    car.scrollLeft = k * car.clientWidth;
+  }
+  abiertoEn[fijo.dataset.sec] = window.scrollY;
+  plegar(fijo, false);
+}
+const estaPegada = fijo => fijo.parentElement.getBoundingClientRect().top < $(".barra").offsetHeight - 2;
 function aplicarPlegado(){
   for (const fijo of document.querySelectorAll(".fijo")) if (plegadoDe[fijo.dataset.sec]) plegar(fijo, true, false);
 }
@@ -1127,17 +1153,14 @@ async function descargarPdf(){
 const artDe = el => D.articulos.find(a => a.cod === el.closest(".art").dataset.cod);
 $("#catalogo").addEventListener("click", e => {
   const dsp = e.target.closest(".desplegar");
-  if (dsp){   // ▾: despliega la escala plegada (y no se vuelve a plegar hasta que el cliente baje 140 px más)
-    const fijo = dsp.closest(".fijo");
-    abiertoEn[fijo.dataset.sec] = window.scrollY;
-    plegar(fijo, false);
-    return;
-  }
+  if (dsp){ desplegarEn(dsp.closest(".fijo"), 0); return; }   // ▾: despliega la escala del título (la principal)
   const f = e.target.closest(".ficha-escala");
   if (f){   // ficha blanca del título: pasa a la escala siguiente y, desde la última, vuelve a la primera
     const escala = document.querySelector(`.escala[data-sec="${CSS.escape(f.dataset.sec)}"]`);
     const car = escala.querySelector(".carrusel"), n = car.children.length;
     const sig = ((diapoDe[f.dataset.sec] || 0) + 1) % n;
+    const fijo = f.closest(".fijo");
+    if (fijo?.classList.contains("plegado")){ desplegarEn(fijo, 1); return; }   // plegada: › despliega directo la OTRA escala
     marcarDiapo(escala, sig, true);     // el título y el alto cambian en el acto, sin esperar a que termine de deslizar
     car.scrollTo({left: sig * car.clientWidth, behavior: reducido() ? "auto" : "smooth"});
     return;
