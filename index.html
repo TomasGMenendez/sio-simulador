@@ -597,6 +597,8 @@ async function fuentePdf(doc){
 }
 // PDF para celular: una sola hoja larga de 400 pt de ancho (se lee de arriba abajo como la pantalla), misma estética:
 // cabecera negra con logo y WhatsApp, tabla CANT. / ARTÍCULO / FINAL (precio por pack y % debajo del nombre), ahorro y TOTAL.
+const orientacion = (ancho, alto) => ancho > alto ? "landscape" : "portrait";
+
 async function pdfMovil(jsPDF, t, logo, marca){
   const W = 400, X0 = 14, X1 = W - 14, C1 = 60, C2 = W - 104;     // columnas: cantidad | artículo | final
   const tmp = new jsPDF({unit: "pt", format: [W, 400]}); const F0 = await fuentePdf(tmp);
@@ -610,7 +612,9 @@ async function pdfMovil(jsPDF, t, logo, marca){
   const YT = 112, CAB = 24, yc = YT + CAB;
   const yp = yc + filas.reduce((s, x) => s + x.alto, 0);
   const alto = yp + 46 + 40;
-  const doc = new jsPDF({unit: "pt", format: [W, alto]}); const F = await fuentePdf(doc);
+  // 19/11 (PDF roto en el iPhone de Toto, 1 artículo): jsPDF da vuelta ancho y alto si no coinciden con la orientación;
+  // con pocas filas la hoja es más ancha que alta y salía cortada. La orientación se elige según las medidas reales.
+  const doc = new jsPDF({orientation: orientacion(W, alto), unit: "pt", format: [W, alto]}); const F = await fuentePdf(doc);
   doc.setFillColor(245, 245, 245); doc.rect(0, 0, W, alto, "F");
   // cabecera
   doc.setFillColor(0, 0, 0); doc.rect(0, 0, W, 70, "F");
@@ -694,8 +698,8 @@ async function descargarPdf(){
       const parte = hojas[h], ultima = h === hojas.length - 1;
       const n = Math.max(parte.length, 6), af = n <= 8 ? 38 : 30;
       const yc = YT + CAB, yp = yc + n * af, yf = yp + (ultima ? PIE : 0), alto = yf + 50;
-      if (!doc){ doc = new jsPDF({orientation: "landscape", unit: "pt", format: [ANCHO, alto]}); F = await fuentePdf(doc); }
-      else doc.addPage([ANCHO, alto], "landscape");
+      if (!doc){ doc = new jsPDF({orientation: orientacion(ANCHO, alto), unit: "pt", format: [ANCHO, alto]}); F = await fuentePdf(doc); }
+      else doc.addPage([ANCHO, alto], orientacion(ANCHO, alto));   // con muchas filas la hoja es más alta que ancha
       doc.setFillColor(245, 245, 245); doc.rect(0, 0, ANCHO, alto, "F");
       doc.setFillColor(0, 0, 0); doc.rect(X0 - 1.5, YT - 1.5, X1 - X0 + 3, yf - YT + 3, "F");
       doc.setFillColor(245, 245, 245); doc.rect(X0, yc, X1 - X0, yf - yc, "F");
