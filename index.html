@@ -518,8 +518,9 @@ function pintarPie(){
   const t = calcular();
   $("#pie-total").textContent = p0(t.con);
   const falta = minimoCompra() - t.con;
-  $("#pie-sub").innerHTML = !t.filas.length ? "Todavía no elegiste productos"
-    : falta > 0 ? `${totTxt(t.packs, t.sueltas)} · <span class="falta">Te faltan ${p0(falta)} para el mínimo</span>`
+  // Toto 19/11: abajo tiene que decir cuál es el mínimo y cuánto falta
+  $("#pie-sub").innerHTML = !t.filas.length ? `Todavía no elegiste productos${minimoCompra() ? ` · Mínimo ${p0(minimoCompra())}` : ""}`
+    : falta > 0 ? `${totTxt(t.packs, t.sueltas)}<br><span class="falta">Mínimo ${p0(minimoCompra())} · te faltan ${p0(falta)}</span>`
     : `${totTxt(t.packs, t.sueltas)}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`;
   $("#ver").disabled = !t.filas.length;
 }
