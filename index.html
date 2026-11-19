@@ -48,7 +48,7 @@ header.cab{background:var(--negro);color:var(--blanco)}
 /* Proveedor */
 section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8px)}
 .prov-cab{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--negro);color:var(--blanco);padding:9px 12px;width:100%;text-align:left}
-.prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
+.prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px;text-align:center;line-height:1.15}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 
 /* Escala (estética original de tabla). Al bajar, acompaña el scroll pegada debajo del buscador y se SUELTA a la mitad de la
@@ -489,11 +489,14 @@ function pintarCatalogo(){
 const diapoDe = {};          // id de sección -> escala que está mirando (se conserva al redibujar con cada + / −)
 let enfocarGrupo = null;     // al cargar un artículo se muestra la escala de SU grupo (lo hizo el cliente, no un temporizador)
 
+// Nombre corto de una escala para el título: su etiqueta sin lo que va entre paréntesis ("Bidón Villamanaos y Sifón Manaos")
+const tituloEscala = g => String(D.reglas[g].etiqueta || g).replace(/\s*\([^)]*\)/g, "").trim().toUpperCase();
+
 function bloqueEscalas(secId, gs){
   if (gs.length === 1) return `<div class="escala">${tablaEscala(gs[0])}</div>`;
   // Se pasa de escala deslizando o con la ficha blanca del título (sin barra de "deslizá", Toto 19/11)
   return `<div class="escala" data-sec="${esc(secId)}">
-    <div class="carrusel">${gs.map(g => `<div class="diapo" data-grupo="${esc(g)}">${tablaEscala(g)}</div>`).join("")}</div></div>`;
+    <div class="carrusel">${gs.map((g, k) => `<div class="diapo" data-grupo="${esc(g)}" data-titulo="${esc(k === 0 ? "" : tituloEscala(g))}" data-tope="${maxPct(g)}">${tablaEscala(g)}</div>`).join("")}</div></div>`;
 }
 
 function marcarDiapo(escala, i){
@@ -503,6 +506,14 @@ function marcarDiapo(escala, i){
   diapoDe[escala.dataset.sec] = i;
   const ficha = document.querySelector(`.ficha-escala[data-sec="${CSS.escape(escala.dataset.sec)}"]`);
   if (ficha) ficha.classList.toggle("vuelta", i === diapos.length - 1);   // en la última, la flecha apunta para volver
+  // El título acompaña a la escala que se ve (Toto 19/11): la principal muestra la marca; las otras, su propio nombre y su tope
+  const cab = escala.closest(".fijo")?.querySelector(".prov-cab");
+  if (cab){
+    const h3 = cab.querySelector("h3"), pill = cab.querySelector(".pill-roja"), d = diapos[i];
+    h3.dataset.marca ??= h3.textContent;
+    h3.textContent = d.dataset.titulo || h3.dataset.marca;
+    if (pill){ pill.textContent = `hasta -${pctTxt(Number(d.dataset.tope))}`; pill.hidden = !Number(d.dataset.tope); }
+  }
   car.style.height = diapos[i].offsetHeight + "px";      // el alto acompaña a la escala que se ve
 }
 
