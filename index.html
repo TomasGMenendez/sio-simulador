@@ -138,6 +138,9 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .tabla-res td.izq{text-align:left}
 .tabla-res td.fuerte{font-weight:900}
 .tabla-res .chico{display:block;font-size:11px;color:var(--gris)}
+/* CANT. con su unidad (Toto 19/11): "2 packs" / "5 uni" / "1 pack" + "+ 7 uni", número en negrita */
+.tabla-res .cant{display:block;white-space:nowrap;font-weight:700;font-size:12px}
+.tabla-res .cant b{font-weight:900;font-size:14px}
 .totales{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
 .ahorro{font-weight:700;font-size:16px}
 .pastilla{background:var(--negro);color:var(--blanco);border-radius:999px;padding:10px 22px;font-weight:900;font-size:19px;display:flex;gap:18px}
@@ -469,7 +472,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "f3d48fc503";
+const VERSION_PAGINA = "c3baa5cdfc";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -605,20 +608,22 @@ const porUnidad = a => !!(a.grupo && D.reglas[a.grupo] && D.reglas[a.grupo].esca
 const partes = (a, u) => ({pk: Math.floor(u / a.uni), su: u % a.uni});
 // Código para MOSTRAR: los artículos de la lista sin código de Chess traen una clave interna ("sc-…") que no se muestra (19/11)
 const codVisible = a => a.sin_cod ? "" : String(a.cod).split("~")[0];
-function cantTxt(a, u){          // "2 packs + 3 u."
+// Cantidades SIEMPRE con su unidad (Toto 19/11): "pack"/"packs" y "uni"
+const txtPacks = n => `${n} pack${n === 1 ? "" : "s"}`;
+function cantLineas(a, u){       // ["2 packs"] · ["5 uni"] · ["1 pack", "+ 7 uni"]
   const {pk, su} = partes(a, u), out = [];
-  if (pk) out.push(`${pk} pack${pk > 1 ? "s" : ""}`);
-  if (su) out.push(`${su} u.`);
-  return out.join(" + ") || "0";
+  if (pk) out.push(txtPacks(pk));
+  if (su) out.push(`${pk ? "+ " : ""}${su} uni`);
+  return out.length ? out : ["0"];
 }
-function cantCorta(a, u){        // columna CANT.: "2" o "2 p + 3 u"
-  const {pk, su} = partes(a, u);
-  return su ? (pk ? `${pk} p + ${su} u` : `${su} u`) : String(pk);
+const cantTxt = (a, u) => cantLineas(a, u).join(" ");          // "1 pack + 7 uni" (mensaje de WhatsApp)
+function cantCelda(a, u){        // columna CANT. de "Tu pedido": número en negrita + unidad, un renglón por tipo
+  return cantLineas(a, u).map(l => `<span class="cant">${esc(l).replace(/(\d+)/, "<b>$1</b>")}</span>`).join("");
 }
 function totTxt(packs, sueltas){
   const out = [];
-  if (packs) out.push(`${packs} pack${packs > 1 ? "s" : ""}`);
-  if (sueltas) out.push(`${sueltas} u. sueltas`);
+  if (packs) out.push(txtPacks(packs));
+  if (sueltas) out.push(`${sueltas} uni sueltas`);
   return out.join(" + ");
 }
 
@@ -930,7 +935,7 @@ function pintarPie(){
 function pintarResumen(){
   const t = calcular();
   $("#res-filas").innerHTML = t.filas.map((f, k) => `<tr style="animation-delay:${(0.12 + Math.min(k, 12) * 0.045).toFixed(3)}s">
-      <td class="fuerte">${esc(cantCorta(f.a, f.u))}</td>
+      <td class="fuerte">${cantCelda(f.a, f.u)}</td>
       <td class="izq">${esc(f.a.nombre)}${codVisible(f.a) ? `<span class="chico">Cód. ${esc(codVisible(f.a))}</span>` : ""}</td>
       <td>${p0(f.a.precio)}</td>
       <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
@@ -1002,7 +1007,7 @@ async function fuentePdf(doc){
 const orientacion = (ancho, alto) => ancho > alto ? "landscape" : "portrait";
 
 async function pdfMovil(jsPDF, t, logo, marca){
-  const W = 400, X0 = 14, X1 = W - 14, C1 = 60, C2 = W - 104;     // columnas: cantidad | artículo | final
+  const W = 400, X0 = 14, X1 = W - 14, C1 = 68, C2 = W - 104;     // columnas: cantidad (con "packs"/"uni") | artículo | final
   const tmp = new jsPDF({unit: "pt", format: [W, 400]}); const F0 = await fuentePdf(tmp);
   // primero se miden las filas (el nombre puede ocupar 2 renglones)
   tmp.setFont(F0, "bold"); tmp.setFontSize(10.5);
@@ -1042,12 +1047,12 @@ async function pdfMovil(jsPDF, t, logo, marca){
   for (const {f, lineas, alto: h} of filas){
     if (y > yc) doc.line(X0, y, X1, y);
     const medio = y + h / 2 + 4;
-    doc.setTextColor(0, 0, 0); doc.setFont(F, "bold"); doc.setFontSize(11.5);
-    const cant = cantCorta(f.a, f.u);
-    if (doc.getTextWidth(cant) > C1 - X0 - 6 && cant.includes(" + ")){   // "1 p + 7 u" no entra: en dos renglones
-      const [a1, a2] = cant.split(" + "); doc.setFontSize(10.5);
-      doc.text(a1, (X0 + C1) / 2, medio - 6, {align: "center"}); doc.text("+ " + a2, (X0 + C1) / 2, medio + 7, {align: "center"});
-    } else doc.text(cant, (X0 + C1) / 2, medio, {align: "center"});
+    // cantidad con su unidad ("2 packs", "5 uni", "1 pack" / "+ 7 uni"): achica la letra hasta que entra en la columna
+    doc.setTextColor(0, 0, 0); doc.setFont(F, "bold");
+    const cl = cantLineas(f.a, f.u);
+    let tc = 11; doc.setFontSize(tc);
+    while (tc > 7.5 && Math.max(...cl.map(l => doc.getTextWidth(l))) > C1 - X0 - 6){ tc -= 0.5; doc.setFontSize(tc); }
+    cl.forEach((l, k) => doc.text(l, (X0 + C1) / 2, medio + (k - (cl.length - 1) / 2) * (tc + 2), {align: "center"}));
     doc.setFontSize(10.5); doc.text(lineas, C1 + 8, y + 18, {lineHeightFactor: 1.2});
     doc.setFont(F, "normal"); doc.setFontSize(8.5); doc.setTextColor(95, 95, 95);
     doc.text([codVisible(f.a) && `Cód. ${codVisible(f.a)}`, `${p0(f.a.precio)} x pack`, f.pct && `-${pctTxt(f.pct)}`].filter(Boolean).join(" · "),
@@ -1126,8 +1131,13 @@ async function descargarPdf(){
       doc.setTextColor(0, 0, 0);
       parte.forEach((f, i) => {
         const b = yc + i * af + af / 2 + 4.5;
-        doc.setFont(F, "bold"); doc.setFontSize(13);
-        doc.text(cantCorta(f.a, f.u), (COLS[0] + COLS[1]) / 2, b, {align: "center"});
+        // cantidad con su unidad ("2 packs", "5 uni", "1 pack" / "+ 7 uni"), achicando si no entra en la columna
+        doc.setFont(F, "bold");
+        const cl = cantLineas(f.a, f.u);
+        let tc = 13; doc.setFontSize(tc);
+        while (tc > 8 && Math.max(...cl.map(l => doc.getTextWidth(l))) > COLS[1] - COLS[0] - 10){ tc -= 0.5; doc.setFontSize(tc); }
+        cl.forEach((l, k) => doc.text(l, (COLS[0] + COLS[1]) / 2, b + (k - (cl.length - 1) / 2) * (tc + 1), {align: "center"}));
+        doc.setFontSize(13);
         let tam = 12.5; doc.setFont(F, "normal"); doc.setFontSize(tam);
         let desc = f.a.nombre;
         while (tam > 7.5 && doc.getTextWidth(desc) > COLS[2] - COLS[1] - 24){ tam -= 0.5; doc.setFontSize(tam); }
