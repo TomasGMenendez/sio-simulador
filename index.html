@@ -43,25 +43,26 @@ header.cab{background:var(--negro);color:var(--blanco)}
 .chip{flex:none;border:1.5px solid var(--negro);border-radius:16px;padding:5px 12px;font-size:12.5px;font-weight:700;white-space:nowrap;background:var(--blanco)}
 .chip.on{background:var(--negro);color:var(--blanco)}
 
-/* Ayuda */
-.ayuda{margin:14px 0 4px;border:1.5px solid var(--negro);background:var(--fondo);font-size:13px;line-height:1.45}
-.ayuda h2{background:var(--negro);color:var(--blanco);font-size:12px;font-weight:700;letter-spacing:.4px;padding:6px 10px}
-.ayuda div{padding:8px 10px}
-.ayuda .rojo{color:var(--rojo);font-weight:700}
-
 /* Proveedor */
-section.prov{margin-top:18px;scroll-margin-top:118px}
+section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8px)}
 .prov-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--negro);color:var(--blanco);padding:9px 12px;width:100%;text-align:left}
 .prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
-.escala{border:1.5px solid var(--negro);border-top:0;font-size:12.5px}
-.escala table{width:100%;border-collapse:collapse}
-.escala th{background:#222;color:var(--blanco);font-weight:700;text-align:left;padding:5px 10px;font-size:11.5px}
-.escala th:last-child,.escala td:last-child{text-align:right}
-.escala td{padding:5px 10px;border-top:1px solid var(--linea)}
-.escala td:last-child{color:var(--rojo);font-weight:700}
-.escala tr.alcanzado td{background:#FFF3F3}
-.escala-tit{padding:6px 10px;font-weight:700;background:var(--fondo);border-top:1px solid var(--linea)}
+
+/* Escala: queda fija debajo del buscador mientras se recorren los artículos de ese proveedor (Toto 19/11) */
+.escala{position:sticky;top:calc(var(--barra-alto,104px) + env(safe-area-inset-top,0px));z-index:15;background:var(--blanco);
+  border:1.5px solid var(--negro);border-top:0;box-shadow:0 6px 10px -8px rgba(0,0,0,.45)}
+.escala-bloque+.escala-bloque{border-top:1.5px solid var(--negro)}
+.escala-tit{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 10px;font-weight:700;font-size:11.5px;background:var(--fondo)}
+.logrado{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 9px;font-weight:900;font-size:11.5px;white-space:nowrap}
+.tramos{display:grid;grid-template-columns:repeat(auto-fit,minmax(66px,1fr))}
+.tramo{display:flex;flex-direction:column;justify-content:center;gap:1px;padding:5px 6px;text-align:center;border-left:1px solid var(--linea);transition:background .25s}
+.tramo:first-child{border-left:0}
+.tramo .cond{font-size:10.5px;line-height:1.2;color:var(--gris)}
+.tramo b{font-size:14px;font-weight:900;color:var(--rojo)}
+.tramo.alcanzado{background:var(--amarillo)}
+.tramo.alcanzado .cond,.tramo.alcanzado b{color:var(--negro)}
+.tramo.vigente{box-shadow:inset 0 0 0 2px var(--negro)}
 
 /* Artículo */
 .art{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 2px;border-bottom:1px solid var(--linea);align-items:center}
@@ -83,6 +84,13 @@ section.prov{margin-top:18px;scroll-margin-top:118px}
 .paso input::-webkit-outer-spin-button,.paso input::-webkit-inner-spin-button{-webkit-appearance:none}
 .art.con .paso{background:var(--negro);color:var(--blanco)}
 .art.con .paso input{color:var(--blanco)}
+.art.con .dto{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 8px;font-weight:900}
+/* Artículos que se venden también por unidad (escala en unidades: Easy Clean, Sol Pampeano, Derna) */
+.pasos{grid-column:2;grid-row:1/3;display:grid;grid-template-columns:auto auto;align-items:center;gap:5px 6px}
+.pasos .paso{grid-column:auto;grid-row:auto}
+.pasos .paso button{width:32px;height:34px;font-size:19px}
+.pasos .paso input{width:38px;height:34px;font-size:15px}
+.paso-et{font-size:10.5px;font-weight:700;color:var(--gris);text-align:right;letter-spacing:.3px}
 .art.agotado .nom,.art.agotado .lista,.art.agotado .final,.art.agotado .final .pes,.art.agotado .dto{color:var(--gris-claro)}
 .art.agotado .meta{color:var(--gris-claro)}
 .sin-stock{grid-column:2;grid-row:1/3;border:1.5px solid var(--gris-claro);color:var(--gris);border-radius:999px;padding:9px 14px;font-weight:900;font-size:12.5px;letter-spacing:.4px;white-space:nowrap;background:var(--fondo)}
@@ -123,6 +131,31 @@ section.prov{margin-top:18px;scroll-margin-top:118px}
 .btn-borde{border:1.5px solid var(--negro);padding:12px}
 .letra-chica{font-size:11.5px;color:var(--gris);line-height:1.45;margin:14px 0 30px}
 .aviso{margin-top:16px;padding:10px;border:1.5px solid var(--negro);font-size:13px;background:var(--fondo)}
+
+/* Responsive (Toto 19/11): computadora = más ancho y artículos en 2 columnas; celulares chicos = controles más compactos */
+@media (min-width:900px){
+  .envoltura{max-width:1180px;padding:0 24px}
+  .arts{display:grid;grid-template-columns:1fr 1fr;column-gap:32px}
+  .chips{flex-wrap:wrap;overflow:visible}
+  .cab h1{font-size:24px}
+  .tramo .cond{font-size:11.5px}
+  .tramo b{font-size:15px}
+  .hoja .envoltura{max-width:880px}
+}
+@media (max-width:370px){
+  .envoltura{padding:0 12px}
+  .cab img{height:38px}
+  .cab h1{font-size:18px}
+  .art .nom{font-size:12.5px}
+  .paso button{width:33px;height:36px}
+  .paso input{width:36px;height:36px}
+  .pasos .paso button{width:28px}
+  .pasos .paso input{width:32px}
+  .final{font-size:15.5px}
+  .pie .tot{font-size:17px}
+  .btn{padding:11px 14px;font-size:13px}
+  .pastilla{font-size:16px;padding:8px 16px;gap:12px}
+}
 </style>
 </head>
 <body>
@@ -145,11 +178,6 @@ section.prov{margin-top:18px;scroll-margin-top:118px}
 </div>
 
 <main class="envoltura">
-  <div class="ayuda">
-    <h2>CÓMO FUNCIONA</h2>
-    <div>Elegí la cantidad de <b>packs</b> con <b>+</b> y <b>−</b>. El descuento se aplica solo según cuántos packs lleves del mismo proveedor:
-      el precio <span class="rojo">en rojo</span> es lo que pagás por pack. Cuando termines, tocá <b>VER MI PEDIDO</b> y mandalo por WhatsApp.</div>
-  </div>
   <div id="catalogo"><p class="vacio">Cargando precios…</p></div>
   <p class="letra-chica" id="pie-datos"></p>
 </main>
@@ -202,9 +230,9 @@ section.prov{margin-top:18px;scroll-margin-top:118px}
 <script>
 "use strict";
 let D = null;                       // datos.json
-const carrito = {};                 // cod -> packs
+const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
-const CLAVE = "sio_simulador_carrito_v1";
+const CLAVE = "sio_simulador_carrito_v2", CLAVE_V1 = "sio_simulador_carrito_v1";   // v1 guardaba packs
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -217,10 +245,36 @@ const lindo = s => s.toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñ])/g, (
 function guardar(){ try { localStorage.setItem(CLAVE, JSON.stringify(carrito)); } catch (e) { /* sin almacenamiento: igual anda */ } }
 function recuperar(){
   try {
-    const c = JSON.parse(localStorage.getItem(CLAVE) || "{}");
-    const validos = new Set(D.articulos.filter(a => !a.sin_stock).map(a => a.cod));   // lo que se quedó sin stock sale del pedido guardado
-    for (const [k, v] of Object.entries(c)) if (validos.has(k) && v > 0) carrito[k] = Math.floor(v);
+    const porCod = new Map(D.articulos.filter(a => !a.sin_stock).map(a => [a.cod, a]));   // lo que se quedó sin stock sale del pedido guardado
+    let c = JSON.parse(localStorage.getItem(CLAVE) || "null"), enPacks = false;
+    if (!c){ c = JSON.parse(localStorage.getItem(CLAVE_V1) || "{}"); enPacks = true; }
+    for (const [k, v] of Object.entries(c)){
+      const a = porCod.get(k); if (!a || !(v > 0)) continue;
+      const u = Math.floor(enPacks ? v * a.uni : v);
+      carrito[k] = porUnidad(a) ? u : Math.max(a.uni, Math.round(u / a.uni) * a.uni);   // sin venta por unidad: packs enteros
+    }
   } catch (e) { /* nada guardado */ }
+}
+
+/* ---------- Packs y unidades ---------- */
+// Se carga por unidad (además de por pack) si la escala de su grupo se mide en unidades: Easy Clean, Sol Pampeano, Derna.
+const porUnidad = a => !!(a.grupo && D.reglas[a.grupo] && D.reglas[a.grupo].escalones.some(e => e.tipo === "u"));
+const partes = (a, u) => ({pk: Math.floor(u / a.uni), su: u % a.uni});
+function cantTxt(a, u){          // "2 packs + 3 u."
+  const {pk, su} = partes(a, u), out = [];
+  if (pk) out.push(`${pk} pack${pk > 1 ? "s" : ""}`);
+  if (su) out.push(`${su} u.`);
+  return out.join(" + ") || "0";
+}
+function cantCorta(a, u){        // columna CANT.: "2" o "2 p + 3 u"
+  const {pk, su} = partes(a, u);
+  return su ? (pk ? `${pk} p + ${su} u` : `${su} u`) : String(pk);
+}
+function totTxt(packs, sueltas){
+  const out = [];
+  if (packs) out.push(`${packs} pack${packs > 1 ? "s" : ""}`);
+  if (sueltas) out.push(`${sueltas} u. sueltas`);
+  return out.join(" + ");
 }
 
 /* ---------- Descuentos ---------- */
@@ -233,9 +287,9 @@ function totalesGrupo(grupo, extraCod){
   let packs = 0, unidades = 0;
   for (const a of D.articulos){
     if (a.grupo !== grupo) continue;
-    let q = carrito[a.cod] || 0;
-    if (a.cod === extraCod && !q) q = 1;     // para mostrar el precio "si llevás 1"
-    packs += q; unidades += q * a.uni;
+    let u = carrito[a.cod] || 0;
+    if (a.cod === extraCod && !u) u = a.uni;     // para mostrar el precio "si llevás 1 pack"
+    packs += Math.floor(u / a.uni); unidades += u;   // packs = solo los cerrados ("por 1 pack cerrado")
   }
   return {packs, unidades};
 }
@@ -247,14 +301,15 @@ function pctArticulo(a){
 function maxPct(grupo){ return Math.max(0, ...D.reglas[grupo].escalones.map(e => e.pct)); }
 
 function calcular(){
-  const filas = []; let sin = 0, con = 0, packs = 0;
+  const filas = []; let sin = 0, con = 0, packs = 0, sueltas = 0;
   for (const a of D.articulos){
-    const q = carrito[a.cod]; if (!q) continue;
+    const u = carrito[a.cod]; if (!u) continue;
     const pct = pctArticulo(a);
-    const s = q * a.precio, c = s * (1 - pct / 100);
-    filas.push({a, q, pct, sin: s, con: c}); sin += s; con += c; packs += q;
+    const s = u * a.precio / a.uni, c = s * (1 - pct / 100);
+    const {pk, su} = partes(a, u);
+    filas.push({a, u, pct, sin: s, con: c}); sin += s; con += c; packs += pk; sueltas += su;
   }
-  return {filas, sin, con, ahorro: sin - con, packs};
+  return {filas, sin, con, ahorro: sin - con, packs, sueltas};
 }
 
 function consejos(){
@@ -281,8 +336,17 @@ function pintarChips(){
     D.categorias.map(c => `<button class="chip ${filtroCat === c ? "on" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
 }
 
+function paso(a, tipo, valor, etiqueta){
+  return `<div class="paso">
+      <button data-acc="${tipo}-" aria-label="${etiqueta}: uno menos">−</button>
+      <input inputmode="numeric" pattern="[0-9]*" data-tipo="${tipo}" value="${valor || ""}" placeholder="0" aria-label="${etiqueta} de ${esc(a.nombre)}">
+      <button data-acc="${tipo}+" aria-label="${etiqueta}: uno más">+</button>
+    </div>`;
+}
+
 function filaArticulo(a){
-  const q = carrito[a.cod] || 0;
+  const q = carrito[a.cod] || 0;            // unidades
+  const {pk, su} = partes(a, q);
   const pct = pctArticulo(a);
   const final = a.precio * (1 - pct / 100);
   const precios = pct
@@ -292,23 +356,24 @@ function filaArticulo(a){
     <div><div class="nom">${esc(a.nombre)}</div>
       <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}</div>
       ${a.badge ? `<span class="badge">${esc(a.badge)}</span>` : ""}</div>
-    ${a.sin_stock ? `<div class="sin-stock">SIN STOCK</div>` : `<div class="paso">
-      <button data-acc="menos" aria-label="Uno menos">−</button>
-      <input inputmode="numeric" pattern="[0-9]*" value="${q || ""}" placeholder="0" aria-label="Packs de ${esc(a.nombre)}">
-      <button data-acc="mas" aria-label="Uno más">+</button>
-    </div>`}
+    ${a.sin_stock ? `<div class="sin-stock">SIN STOCK</div>`
+      : porUnidad(a) && a.uni > 1
+        ? `<div class="pasos"><span class="paso-et">PACKS</span>${paso(a, "p", pk, "Packs")}<span class="paso-et">UNID.</span>${paso(a, "u", su, "Unidades sueltas")}</div>`
+        : paso(a, "p", pk, "Packs")}
     <div class="precios">${precios}</div>
     ${a.promo ? `<div class="promo">🎁 Promo: ${/^\d/.test(a.promo.comprando) ? "comprando " + esc(a.promo.comprando) : esc(a.promo.comprando.charAt(0).toLowerCase() + a.promo.comprando.slice(1))} → ${esc(a.promo.obsequio)}</div>` : ""}
   </div>`;
 }
 
 function tablaEscala(grupo){
+  // Tramos en una fila (compacta, porque queda fija arriba al bajar). Los logrados con lo cargado van en AMARILLO (Toto 19/11).
   const r = D.reglas[grupo], t = totalesGrupo(grupo);
-  const filas = r.escalones.map(e => {
+  const actual = pctPara(r.escalones, t.packs, t.unidades);
+  const celdas = r.escalones.map(e => {
     const ok = (e.tipo === "p" ? t.packs : t.unidades) >= e.desde;
-    return `<tr class="${ok ? "alcanzado" : ""}"><td>${esc(e.texto)}</td><td>-${pctTxt(e.pct)}</td></tr>`;
+    return `<div class="tramo ${ok ? "alcanzado" : ""} ${ok && e.pct === actual ? "vigente" : ""}"><span class="cond">${esc(e.texto)}</span><b>-${pctTxt(e.pct)}</b></div>`;
   }).join("");
-  return `<div class="escala-tit">Escala por volumen · ${esc(r.etiqueta)}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table>`;
+  return `<div class="escala-bloque"><div class="escala-tit"><span>Escala · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><div class="tramos">${celdas}</div></div>`;
 }
 
 function pintarCatalogo(){
@@ -323,7 +388,7 @@ function pintarCatalogo(){
     html += `<section class="prov" id="cat-${esc(norm(cat).replace(/[^A-Z0-9]/g, "_"))}">
       <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
       ${grupos.some(g => D.reglas[g].escalones.length > 1) ? `<div class="escala">${grupos.filter(g => D.reglas[g].escalones.length > 1).map(tablaEscala).join("")}</div>` : ""}
-      ${arts.map(filaArticulo).join("")}
+      <div class="arts">${arts.map(filaArticulo).join("")}</div>
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
@@ -332,16 +397,16 @@ function pintarCatalogo(){
 function pintarPie(){
   const t = calcular();
   $("#pie-total").textContent = p0(t.con);
-  $("#pie-sub").innerHTML = t.packs
-    ? `${t.packs} pack${t.packs > 1 ? "s" : ""}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`
+  $("#pie-sub").innerHTML = t.filas.length
+    ? `${totTxt(t.packs, t.sueltas)}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`
     : "Todavía no elegiste productos";
-  $("#ver").disabled = !t.packs;
+  $("#ver").disabled = !t.filas.length;
 }
 
 function pintarResumen(){
   const t = calcular();
   $("#res-filas").innerHTML = t.filas.map(f => `<tr>
-      <td class="fuerte">${f.q}</td>
+      <td class="fuerte">${esc(cantCorta(f.a, f.u))}</td>
       <td class="izq">${esc(f.a.nombre)}<span class="chico">Cód. ${esc(f.a.cod)}</span></td>
       <td>${p0(f.a.precio)}</td>
       <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
@@ -354,10 +419,12 @@ function pintarResumen(){
 
 function refrescar(){ pintarCatalogo(); pintarPie(); guardar(); }
 
-function cambiar(cod, q){
-  if (D.articulos.find(a => a.cod === cod)?.sin_stock) return;
-  q = Math.max(0, Math.min(9999, Math.floor(Number(q) || 0)));
-  if (q) carrito[cod] = q; else delete carrito[cod];
+function cambiar(cod, u){            // u = unidades
+  const a = D.articulos.find(x => x.cod === cod);
+  if (!a || a.sin_stock) return;
+  u = Math.max(0, Math.min(9999 * a.uni, Math.floor(Number(u) || 0)));
+  if (!porUnidad(a)) u = Math.round(u / a.uni) * a.uni;          // sin venta por unidad: packs enteros
+  if (u) carrito[cod] = u; else delete carrito[cod];
   refrescar();
   const el = document.querySelector(`.art[data-cod="${CSS.escape(cod)}"] input`);
   if (el && document.activeElement !== el) el.blur();
@@ -367,10 +434,10 @@ function cambiar(cod, q){
 function mensaje(){
   const t = calcular();
   const hoy = new Date().toLocaleDateString("es-AR");
-  const lineas = t.filas.map(f => `• ${f.q} pack${f.q > 1 ? "s" : ""} ${f.a.nombre} (${f.a.cod})${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
+  const lineas = t.filas.map(f => `• ${cantTxt(f.a, f.u)} ${f.a.nombre} (${f.a.cod})${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
   return ["Hola! Armé este pedido en el simulador de SIO GLOBAL:", "", ...lineas, "",
     `*Total: ${p0(t.con)}*`, t.ahorro >= 1 ? `Ahorro: ${p0(t.ahorro)}` : null,
-    `(${t.packs} packs · precios de lista general del ${hoy})`].filter(x => x !== null).join("\n");
+    `(${totTxt(t.packs, t.sueltas)} · precios de lista general del ${hoy})`].filter(x => x !== null).join("\n");
 }
 
 /* ---------- PDF (misma estética que la simulación del CRM) ---------- */
@@ -436,7 +503,7 @@ async function descargarPdf(){
       parte.forEach((f, i) => {
         const b = yc + i * af + af / 2 + 4.5;
         doc.setFont(F, "bold"); doc.setFontSize(13);
-        doc.text(String(f.q), (COLS[0] + COLS[1]) / 2, b, {align: "center"});
+        doc.text(cantCorta(f.a, f.u), (COLS[0] + COLS[1]) / 2, b, {align: "center"});
         let tam = 12.5; doc.setFont(F, "normal"); doc.setFontSize(tam);
         let desc = f.a.nombre;
         while (tam > 7.5 && doc.getTextWidth(desc) > COLS[2] - COLS[1] - 24){ tam -= 0.5; doc.setFontSize(tam); }
@@ -469,13 +536,19 @@ async function descargarPdf(){
 }
 
 /* ---------- Eventos ---------- */
+const artDe = el => D.articulos.find(a => a.cod === el.closest(".art").dataset.cod);
 $("#catalogo").addEventListener("click", e => {
   const b = e.target.closest("button[data-acc]"); if (!b) return;
-  const cod = b.closest(".art").dataset.cod, q = carrito[cod] || 0;
-  cambiar(cod, b.dataset.acc === "mas" ? q + 1 : q - 1);
+  const a = artDe(b), u = carrito[a.cod] || 0, {pk} = partes(a, u);
+  const [tipo, signo] = b.dataset.acc;                      // "p+", "p-", "u+", "u-"
+  if (tipo === "p" && signo === "-" && !pk) return;         // sin packs: el − de packs no borra las unidades sueltas
+  cambiar(a.cod, u + (signo === "+" ? 1 : -1) * (tipo === "p" ? a.uni : 1));
 });
 $("#catalogo").addEventListener("change", e => {
-  if (e.target.matches(".paso input")) cambiar(e.target.closest(".art").dataset.cod, e.target.value);
+  if (!e.target.matches(".paso input")) return;
+  const a = artDe(e.target), {pk, su} = partes(a, carrito[a.cod] || 0);
+  const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+  cambiar(a.cod, e.target.dataset.tipo === "u" ? pk * a.uni + v : v * a.uni + su);
 });
 $("#catalogo").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.matches(".paso input")) e.target.blur();
@@ -503,6 +576,11 @@ $("#vaciar").addEventListener("click", () => {
 });
 
 /* ---------- Arranque ---------- */
+// La escala fija se apoya justo debajo del buscador: su alto cambia con el ancho (chips en 1 o 2 renglones).
+const fijarAltoBarra = () => document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px");
+fijarAltoBarra();
+if (window.ResizeObserver) new ResizeObserver(fijarAltoBarra).observe($(".barra"));
+else window.addEventListener("resize", fijarAltoBarra);
 (async () => {
   try {
     const r = await fetch("datos.json?t=" + Date.now(), {cache: "no-store"});
