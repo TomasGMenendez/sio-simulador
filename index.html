@@ -18,6 +18,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
+/* Sin zoom con doble toque (Toto 19/11); el zoom con dos dedos sigue andando */
+html,body,button,input,a,.art,.paso{touch-action:manipulation}
 body{font-family:Mulish,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--blanco);color:var(--negro);
   min-height:100vh;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 body::before{content:"";position:fixed;inset:0;background:url(assets/marca_agua.png) center 55%/min(88vw,560px) auto no-repeat;opacity:.55;pointer-events:none;z-index:-1}
@@ -144,6 +146,29 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .btn-wa{background:var(--verde-wa);color:#fff;font-size:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:10px}
 .btn-negro{background:var(--negro);color:var(--blanco);padding:14px}
 .btn-borde{border:1.5px solid var(--negro);padding:12px}
+.minimo{border:1.5px solid var(--rojo);background:#FFF3F3;border-radius:8px;padding:9px 11px;font-size:13.5px;margin-top:12px}
+.minimo b{color:var(--rojo)}
+.btn-wa.deshabilitado{opacity:.4;pointer-events:none}
+.pie .sub .falta{color:#FF8A8A;font-weight:700}
+
+/* Bienvenida: comunidad + mini explicación (Toto 19/11) */
+.bienvenida{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px}
+.bienvenida.abierta{display:flex}
+.bv-caja{background:var(--blanco);width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto;border:2px solid var(--negro);border-radius:14px}
+.bv-cab{background:var(--negro);color:var(--blanco);display:flex;align-items:center;gap:12px;padding:12px 14px}
+.bv-cab img{height:42px;width:auto;flex:none}
+.bv-cab h2{font-size:17px;font-weight:900;line-height:1.15}
+.bv-cab h2 span{color:var(--amarillo)}
+.bv-cuerpo{padding:14px;display:grid;gap:12px;font-size:13.5px;line-height:1.4}
+.bv-lista{list-style:none;display:grid;gap:8px;counter-reset:paso}
+.bv-lista li{position:relative;padding-left:30px}
+.bv-lista li::before{counter-increment:paso;content:counter(paso);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;
+  background:var(--negro);color:var(--amarillo);font-weight:900;font-size:12px;display:grid;place-items:center}
+.bv-lista mark{background:var(--amarillo);padding:0 4px;font-weight:700}
+.bv-lista .rojo{color:var(--rojo);font-weight:700}
+.bv-comunidad{border:1.5px solid var(--verde-wa);background:#EFFBF3;border-radius:10px;padding:11px 12px;display:grid;gap:7px}
+.bv-comunidad strong{font-size:15px;font-weight:900}
+.bv-comunidad .btn-wa{font-size:14px;padding:12px;text-decoration:none}
 .letra-chica{font-size:11.5px;color:var(--gris);line-height:1.45;margin:14px 0 30px}
 .aviso{margin-top:16px;padding:10px;border:1.5px solid var(--negro);font-size:13px;background:var(--fondo)}
 
@@ -231,6 +256,7 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
       <div class="ahorro">Ahorro total <span id="res-ahorro"></span></div>
       <div class="pastilla"><span>TOTAL</span><span id="res-total"></span></div>
     </div>
+    <div class="minimo" id="minimo" hidden></div>
     <div class="consejos" id="consejos"></div>
     <div class="acciones">
       <a class="btn btn-wa" id="enviar" href="#" target="_blank" rel="noopener" style="text-decoration:none">
@@ -240,8 +266,32 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
       <button class="btn btn-negro" id="pdf">DESCARGAR PDF DE LA SIMULACIÓN</button>
       <button class="btn btn-borde" id="vaciar">Vaciar pedido</button>
     </div>
-    <p class="letra-chica">Precios de lista general, finales con IVA e impuestos internos. Descuentos no acumulables.
+    <p class="letra-chica">Precios de lista general, finales con IVA e impuestos internos. Descuentos no acumulables. Pedido mínimo $35.000.
       Es una simulación: el pedido queda confirmado cuando te responde un vendedor, sujeto a stock.</p>
+  </div>
+</div>
+
+<div class="bienvenida" id="bienvenida" role="dialog" aria-modal="true" aria-labelledby="bv-tit">
+  <div class="bv-caja">
+    <div class="bv-cab">
+      <img src="assets/logo_cabecera.png" alt="">
+      <h2 id="bv-tit">¡Bienvenido al simulador de <span>SIO GLOBAL</span>!</h2>
+    </div>
+    <div class="bv-cuerpo">
+      <p>Armá tu pedido y mirá al instante cuánto pagás con los descuentos.</p>
+      <ol class="bv-lista">
+        <li><b>Buscá</b> un producto o tocá un proveedor arriba.</li>
+        <li>Elegí cuántos <b>packs</b> querés con <b>+</b> y <b>−</b>. En fideos, Derna y Easy Clean también podés sumar <b>unidades</b>.</li>
+        <li>La <b>escala de descuentos</b> se pinta de <mark>amarillo</mark> a medida que sumás; el precio <span class="rojo">en rojo</span> es lo que pagás.</li>
+        <li>Pedido mínimo <b id="bv-minimo">$35.000</b>. Tocá <b>VER MI PEDIDO</b> y mandalo por WhatsApp.</li>
+      </ol>
+      <div class="bv-comunidad">
+        <strong>📢 Sumate a la Comunidad SIO</strong>
+        <span>Ofertas, ingresos de mercadería y la lista de precios actualizada, directo en tu WhatsApp.</span>
+        <a class="btn btn-wa" href="https://chat.whatsapp.com/Bh0sG3CH8xF4R7SqcmQGdY" target="_blank" rel="noopener">UNIRME A LA COMUNIDAD</a>
+      </div>
+      <button class="btn btn-negro" id="bv-cerrar">VER EL SIMULADOR</button>
+    </div>
   </div>
 </div>
 
@@ -270,7 +320,7 @@ function recuperar(){
     for (const [k, v] of Object.entries(c)){
       const a = porCod.get(k); if (!a || !(v > 0)) continue;
       const u = Math.floor(enPacks ? v * a.uni : v);
-      carrito[k] = porUnidad(a) ? u : Math.max(a.uni, Math.round(u / a.uni) * a.uni);   // sin venta por unidad: packs enteros
+      carrito[k] = porUnidad(a) ? Math.max(u, a.min || 0) : Math.max(a.uni, Math.round(u / a.uni) * a.uni);   // sin venta por unidad: packs enteros
     }
   } catch (e) { /* nada guardado */ }
 }
@@ -373,7 +423,7 @@ function filaArticulo(a){
     : `<span class="final" style="color:var(--negro)"><span class="pes">$</span>${a.precio.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`;
   return `<div class="art ${q ? "con" : ""} ${a.sin_stock ? "agotado" : ""}" data-cod="${esc(a.cod)}">
     <div><div class="nom">${esc(a.nombre)}</div>
-      <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}</div>
+      <div class="meta">Cód. ${esc(a.cod)}${a.uni > 1 ? ` · Pack x${a.uni} u. · ${p2(final / a.uni)} c/u` : ""}${porUnidad(a) && a.min > 1 && a.min < a.uni ? ` · <b>Mín. ${a.min} u.</b>` : ""}</div>
       ${a.badge ? `<span class="badge">${esc(a.badge)}</span>` : ""}</div>
     ${a.sin_stock ? `<div class="sin-stock">SIN STOCK</div>`
       : porUnidad(a) && a.uni > 1
@@ -434,7 +484,7 @@ function bloqueEscalas(secId, gs){
     <div class="carrusel">${gs.map(g => `<div class="diapo" data-grupo="${esc(g)}">${tablaEscala(g)}</div>`).join("")}</div>
     <div class="carrusel-pie"><button class="flecha" data-dir="-1" aria-label="Escala anterior">‹</button>
       <span class="puntos">${gs.map(() => "<i></i>").join("")}</span>
-      <span class="carrusel-txt">Deslizá para ver la otra escala (${gs.length})</span>
+      <span class="carrusel-txt">Deslizá para ver la otra escala</span>
       <button class="flecha" data-dir="1" aria-label="Escala siguiente">›</button></div></div>`;
 }
 
@@ -467,9 +517,10 @@ function armarCarruseles(){
 function pintarPie(){
   const t = calcular();
   $("#pie-total").textContent = p0(t.con);
-  $("#pie-sub").innerHTML = t.filas.length
-    ? `${totTxt(t.packs, t.sueltas)}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`
-    : "Todavía no elegiste productos";
+  const falta = minimoCompra() - t.con;
+  $("#pie-sub").innerHTML = !t.filas.length ? "Todavía no elegiste productos"
+    : falta > 0 ? `${totTxt(t.packs, t.sueltas)} · <span class="falta">Te faltan ${p0(falta)} para el mínimo</span>`
+    : `${totTxt(t.packs, t.sueltas)}${t.ahorro >= 1 ? ` · Ahorrás <b>${p0(t.ahorro)}</b>` : ""}`;
   $("#ver").disabled = !t.filas.length;
 }
 
@@ -484,16 +535,26 @@ function pintarResumen(){
   $("#res-ahorro").textContent = p0(t.ahorro);
   $("#res-total").textContent = p0(t.con);
   $("#consejos").innerHTML = consejos().map(c => `<div class="consejo">💡 ${c}</div>`).join("");
-  $("#enviar").href = `https://wa.me/${D.whatsapp}?text=${encodeURIComponent(mensaje())}`;
+  // Pedido mínimo (total con descuentos): por debajo no se puede mandar por WhatsApp
+  const falta = minimoCompra() - t.con, envio = $("#enviar");
+  $("#minimo").hidden = !(falta > 0);
+  $("#minimo").innerHTML = falta > 0 ? `El pedido mínimo es de <b>${p0(minimoCompra())}</b>. Te faltan <b>${p0(falta)}</b> para poder enviarlo.` : "";
+  envio.classList.toggle("deshabilitado", falta > 0);
+  envio.setAttribute("aria-disabled", falta > 0 ? "true" : "false");
+  envio.href = falta > 0 ? "#" : `https://wa.me/${D.whatsapp}?text=${encodeURIComponent(mensaje())}`;
 }
+const minimoCompra = () => Number(D.minimo_compra) || 0;
 
 function refrescar(){ pintarCatalogo(); pintarPie(); guardar(); }
 
 function cambiar(cod, u){            // u = unidades
   const a = D.articulos.find(x => x.cod === cod);
   if (!a || a.sin_stock) return;
+  const antes = carrito[cod] || 0;
   u = Math.max(0, Math.min(9999 * a.uni, Math.floor(Number(u) || 0)));
   if (!porUnidad(a)) u = Math.round(u / a.uni) * a.uni;          // sin venta por unidad: packs enteros
+  // Mínimo de venta de Chess (19/11: fideos Sol Pampeano = 5 u.): subiendo salta al mínimo, bajando de él vuelve a 0
+  else if (a.min > 1 && u > 0 && u < a.min) u = u > antes ? a.min : 0;
   if (u) carrito[cod] = u; else delete carrito[cod];
   enfocarGrupo = a.grupo;
   refrescar();
@@ -676,7 +737,22 @@ window.addEventListener("resize", fijarAltoBarra);
   const f = new Date(D.actualizado);
   $("#pie-datos").textContent = `Precios de lista general, finales con IVA e Imp. internos. Actualizado el ${f.toLocaleDateString("es-AR")} a las ${f.toLocaleTimeString("es-AR", {hour: "2-digit", minute: "2-digit"})}.`;
   recuperar(); pintarChips(); refrescar();
+  abrirBienvenida();
 })();
+
+/* ---------- Bienvenida (una vez por visita) ---------- */
+function abrirBienvenida(){
+  try { if (sessionStorage.getItem("sio_bienvenida")) return; } catch (e) { /* sin almacenamiento: se muestra igual */ }
+  if (minimoCompra()) $("#bv-minimo").textContent = p0(minimoCompra());
+  $("#bienvenida").classList.add("abierta"); document.body.style.overflow = "hidden";
+}
+function cerrarBienvenida(){
+  $("#bienvenida").classList.remove("abierta"); document.body.style.overflow = "";
+  try { sessionStorage.setItem("sio_bienvenida", "1"); } catch (e) { /* nada */ }
+}
+$("#bv-cerrar").addEventListener("click", cerrarBienvenida);
+$("#bienvenida").addEventListener("click", e => { if (e.target.id === "bienvenida") cerrarBienvenida(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#bienvenida").classList.contains("abierta")) cerrarBienvenida(); });
 </script>
 </body>
 </html>
