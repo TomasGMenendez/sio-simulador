@@ -47,7 +47,7 @@ header.cab{background:var(--negro);color:var(--blanco)}
 
 /* Proveedor */
 section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8px)}
-.prov-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--negro);color:var(--blanco);padding:9px 12px;width:100%;text-align:left}
+.prov-cab{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--negro);color:var(--blanco);padding:9px 12px;width:100%;text-align:left}
 .prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 
@@ -71,14 +71,14 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
   overscroll-behavior-x:contain;transition:height .2s}
 .carrusel::-webkit-scrollbar{display:none}
 .diapo{flex:0 0 100%;min-width:0;scroll-snap-align:start}
-.carrusel-pie{display:flex;align-items:center;gap:8px;padding:2px 6px;background:var(--fondo);border-top:1px solid var(--linea)}
-.flecha{width:30px;height:26px;font-size:21px;font-weight:900;line-height:1;border-radius:6px}
-.flecha:active{background:var(--linea)}
-.flecha:disabled{opacity:.25}
-.puntos{display:flex;gap:6px}
-.puntos i{width:8px;height:8px;border-radius:50%;background:var(--gris-claro)}
-.puntos i.on{background:var(--negro)}
-.carrusel-txt{flex:1;font-size:11px;color:var(--gris);text-align:center}
+/* Ficha blanca con flecha al lado del "hasta -X%": pasa a la otra escala */
+.ficha-escala{flex:none;width:30px;height:30px;border-radius:50%;background:var(--blanco);color:var(--negro);font-size:22px;font-weight:900;
+  line-height:1;display:grid;place-items:center;padding-bottom:3px;transition:transform .25s}
+.ficha-escala:active{transform:scale(.9)}
+.ficha-escala.vuelta{transform:rotate(180deg)}
+/* Título + tabla quedan pegados juntos debajo del buscador (la primera mitad de la lista) */
+.fijo{position:sticky;top:calc(var(--barra-alto,104px) + env(safe-area-inset-top,0px));z-index:15;box-shadow:0 6px 10px -8px rgba(0,0,0,.45)}
+.fijo .escala{position:static;box-shadow:none}
 .logrado{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 9px;font-weight:900;font-size:11.5px;white-space:nowrap}
 
 /* Artículo */
@@ -130,7 +130,7 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .hoja .cab .envoltura{justify-content:space-between}
 /* Volver a cambiar el pedido (Toto 19/11: "Seguir" no se entendía) */
 .cerrar{background:var(--amarillo);color:var(--negro);font-size:13.5px;font-weight:900;border-radius:999px;padding:8px 14px;white-space:nowrap}
-.btn-modificar{background:var(--amarillo);color:var(--negro);padding:14px}
+.btn-icono{display:flex;align-items:center;justify-content:center;gap:10px}
 .res-cli{font-size:18px;margin:16px 0 10px}
 .tabla-res{width:100%;border-collapse:collapse;border:2px solid var(--negro);font-size:13px}
 .tabla-res th{background:var(--negro);color:var(--blanco);font-weight:700;padding:8px 6px;font-size:11.5px;text-align:center}
@@ -166,8 +166,14 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .bv-lista li{position:relative;padding-left:30px}
 .bv-lista li::before{counter-increment:paso;content:counter(paso);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;
   background:var(--negro);color:var(--amarillo);font-weight:900;font-size:12px;display:grid;place-items:center}
-.bv-lista mark{background:var(--amarillo);padding:0 4px;font-weight:700}
-.bv-lista .rojo{color:var(--rojo);font-weight:700}
+.bv-lista{font-size:15px;gap:10px}
+.bv-lista li{line-height:1.35}
+.bv-lista li:last-child{font-size:13.5px}
+.bv-dto{background:var(--amarillo);color:var(--negro);border-radius:999px;padding:1px 10px;font-weight:900}   /* = "Lograste -X%" */
+.bv-final{color:var(--rojo);font-weight:900}                                                                 /* = precio final */
+.bv-wa{vertical-align:-6px;margin-left:2px}
+.bv-claves{display:flex;flex-wrap:wrap;gap:6px}
+.bv-claves span{background:var(--blanco);border:1.5px solid var(--negro);border-radius:999px;padding:3px 10px;font-weight:900;font-size:12.5px}
 .bv-comunidad{border:1.5px solid var(--verde-wa);background:#EFFBF3;border-radius:10px;padding:11px 12px;display:grid;gap:7px}
 .bv-comunidad strong{font-size:15px;font-weight:900}
 .bv-comunidad .btn-wa{font-size:14px;padding:12px;text-decoration:none}
@@ -218,7 +224,7 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 
 <div class="barra">
   <div class="envoltura">
-    <input class="buscar" id="buscar" type="search" placeholder="Buscá un producto o código…" autocomplete="off">
+    <input class="buscar" id="buscar" type="search" placeholder="Buscá producto o marca…" autocomplete="off">
     <nav class="chips" id="chips" aria-label="Proveedores"></nav>
   </div>
 </div>
@@ -244,7 +250,8 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
       <div style="display:flex;align-items:center;gap:12px">
         <img src="assets/logo_cabecera.png" alt="SIO GLOBAL">
         <h1>TU PEDIDO</h1>
-      </div>    </div>
+      </div>
+      <button class="cerrar" id="cerrar">✏️ Modificar pedido</button>    </div>
   </header>
   <div class="envoltura">
     <p class="res-cli">Simulación de pedido</p>
@@ -261,10 +268,9 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
     <div class="acciones">
       <a class="btn btn-wa" id="enviar" href="#" target="_blank" rel="noopener" style="text-decoration:none">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3z"/></svg>
-        ENVIAR PEDIDO POR WHATSAPP
+        ENVIAR TU PEDIDO
       </a>
-      <button class="btn btn-negro" id="pdf">DESCARGAR PDF DE LA SIMULACIÓN</button>
-      <button class="btn btn-modificar" id="modificar">✏️ MODIFICAR PEDIDO (agregar o sacar productos)</button>
+      <button class="btn btn-negro btn-icono" id="pdf"><svg width="20" height="24" viewBox="0 0 20 24" aria-hidden="true"><path d="M3 1h9.5L18 6.5V22a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="#fff"/><path d="M12.5 1v5.5H18" fill="none" stroke="#9A9A9A" stroke-width="1.4"/><rect x="0" y="12" width="15.5" height="8" rx="1.6" fill="#E60000"/><text x="7.75" y="18.2" font-size="6.2" font-weight="900" text-anchor="middle" fill="#fff" font-family="Arial,Helvetica,sans-serif">PDF</text></svg><span>DESCARGAR TU PEDIDO</span></button>
       <button class="btn btn-borde" id="vaciar">Vaciar pedido</button>
     </div>
     <p class="letra-chica">Precios de lista general, finales con IVA e impuestos internos. Descuentos no acumulables. Pedido mínimo $35.000.
@@ -279,16 +285,17 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
       <h2 id="bv-tit">¡Bienvenido al simulador de <span>SIO GLOBAL</span>!</h2>
     </div>
     <div class="bv-cuerpo">
-      <p>Armá tu pedido y mirá al instante cuánto pagás con los descuentos.</p>
+      <!-- Toto 19/11: palabras clave, más visual que de lectura (se tiene que entender de un vistazo) -->
       <ol class="bv-lista">
-        <li><b>Buscá</b> un producto o tocá un proveedor arriba.</li>
-        <li>Elegí cuántos <b>packs</b> querés con <b>+</b> y <b>−</b>. En fideos, Derna y Easy Clean también podés sumar <b>unidades</b>.</li>
-        <li>La <b>escala de descuentos</b> se pinta de <mark>amarillo</mark> a medida que sumás; el precio <span class="rojo">en rojo</span> es lo que pagás.</li>
-        <li>Pedido mínimo <b id="bv-minimo">$35.000</b>. Tocá <b>VER MI PEDIDO</b> y mandalo por WhatsApp.</li>
+        <li><b>Buscá</b> producto / marca</li>
+        <li><b>Elegí</b> la cantidad</li>
+        <li><span class="bv-dto">Descuentos</span> y <span class="bv-final">precio final</span></li>
+        <li>Contamos con un mínimo de <b id="bv-minimo">$35.000</b>. Para confirmar, envialo a
+          <svg class="bv-wa" width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="WhatsApp"><circle cx="12" cy="12" r="12" fill="#25D366"/><path transform="translate(2.6 2.6) scale(.78)" fill="#fff" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3z"/></svg></li>
       </ol>
       <div class="bv-comunidad">
-        <strong>📢 Sumate a la Comunidad SIO</strong>
-        <span>Ofertas, ingresos de mercadería y la lista de precios actualizada, directo en tu WhatsApp.</span>
+        <strong>📢 Unite a la Comunidad SIO</strong>
+        <div class="bv-claves"><span>🔥 Ofertas</span><span>📦 Ingresos</span><span>💲 Lista de precios</span></div>
         <a class="btn btn-wa" href="https://chat.whatsapp.com/Bh0sG3CH8xF4R7SqcmQGdY" target="_blank" rel="noopener">UNIRME A LA COMUNIDAD</a>
       </div>
       <button class="btn btn-negro" id="bv-cerrar">VER EL SIMULADOR</button>
@@ -451,7 +458,8 @@ function pintarCatalogo(){
   let html = "";
   for (const cat of D.categorias){
     if (filtroCat && cat !== filtroCat) continue;
-    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod).includes(txt)));
+    // Se busca por producto, código o MARCA (los clientes conocen la marca, no el proveedor)
+    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod + " " + a.cat).includes(txt)));
     if (!arts.length) continue;
     const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
     const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
@@ -459,16 +467,18 @@ function pintarCatalogo(){
     const cuantos = g => arts.filter(a => a.grupo === g).length;
     const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1).sort((x, y) => cuantos(y) - cuantos(x));
     const secId = "cat-" + norm(cat).replace(/[^A-Z0-9]/g, "_");
+    // Título centrado: MARCA + "hasta -X%" + (si hay varias escalas) ficha blanca con flecha para pasar a la otra (Toto 19/11)
+    const cab = `<div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}${
+      conEscala.length > 1 ? `<button class="ficha-escala" data-sec="${esc(secId)}" aria-label="Ver la otra escala de ${esc(cat)}">›</button>` : ""}</div>`;
     html += `<section class="prov" id="${esc(secId)}">
-      <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
       ${conEscala.length
-        ? (() => {   // la tabla acompaña solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
+        ? (() => {   // título + tabla acompañan solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
             const mitad = Math.max(1, Math.ceil(arts.length / 4) * 2);
-            return `<div class="mitad1">${bloqueEscalas(secId, conEscala)}
+            return `<div class="mitad1"><div class="fijo">${cab}${bloqueEscalas(secId, conEscala)}</div>
               <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
               <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
           })()
-        : `<div class="arts">${arts.map(filaArticulo).join("")}</div>`}
+        : `${cab}<div class="arts">${arts.map(filaArticulo).join("")}</div>`}
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
@@ -481,12 +491,9 @@ let enfocarGrupo = null;     // al cargar un artículo se muestra la escala de S
 
 function bloqueEscalas(secId, gs){
   if (gs.length === 1) return `<div class="escala">${tablaEscala(gs[0])}</div>`;
+  // Se pasa de escala deslizando o con la ficha blanca del título (sin barra de "deslizá", Toto 19/11)
   return `<div class="escala" data-sec="${esc(secId)}">
-    <div class="carrusel">${gs.map(g => `<div class="diapo" data-grupo="${esc(g)}">${tablaEscala(g)}</div>`).join("")}</div>
-    <div class="carrusel-pie"><button class="flecha" data-dir="-1" aria-label="Escala anterior">‹</button>
-      <span class="puntos">${gs.map(() => "<i></i>").join("")}</span>
-      <span class="carrusel-txt">Deslizá para ver la otra escala</span>
-      <button class="flecha" data-dir="1" aria-label="Escala siguiente">›</button></div></div>`;
+    <div class="carrusel">${gs.map(g => `<div class="diapo" data-grupo="${esc(g)}">${tablaEscala(g)}</div>`).join("")}</div></div>`;
 }
 
 function marcarDiapo(escala, i){
@@ -494,9 +501,8 @@ function marcarDiapo(escala, i){
   if (!escala.isConnected || !diapos.length) return;   // tabla vieja: la lista se redibujó mientras se deslizaba
   i = Math.max(0, Math.min(diapos.length - 1, Number.isFinite(i) ? i : 0));
   diapoDe[escala.dataset.sec] = i;
-  escala.querySelectorAll(".puntos i").forEach((p, k) => p.classList.toggle("on", k === i));
-  escala.querySelector('.flecha[data-dir="-1"]').disabled = i === 0;
-  escala.querySelector('.flecha[data-dir="1"]').disabled = i === diapos.length - 1;
+  const ficha = document.querySelector(`.ficha-escala[data-sec="${CSS.escape(escala.dataset.sec)}"]`);
+  if (ficha) ficha.classList.toggle("vuelta", i === diapos.length - 1);   // en la última, la flecha apunta para volver
   car.style.height = diapos[i].offsetHeight + "px";      // el alto acompaña a la escala que se ve
 }
 
@@ -660,7 +666,7 @@ async function pdfMovil(jsPDF, t, logo, marca){
 
 async function descargarPdf(){
   const t = calcular(); if (!t.filas.length) return;
-  const boton = $("#pdf"); boton.disabled = true; boton.textContent = "Armando el PDF…";
+  const boton = $("#pdf"), rotulo = boton.querySelector("span"); boton.disabled = true; rotulo.textContent = "Armando el PDF…";
   try {
     const {jsPDF} = window.jspdf;
     const [logo, marca] = await Promise.all([aDataUrl("assets/logo_cabecera.png"), aDataUrl("assets/marca_agua.png")]);
@@ -741,17 +747,19 @@ async function descargarPdf(){
   } catch (e) {
     alert("No se pudo armar el PDF. Probá de nuevo o mandá el pedido por WhatsApp.");
   } finally {
-    boton.disabled = false; boton.textContent = "DESCARGAR PDF DE LA SIMULACIÓN";
+    boton.disabled = false; rotulo.textContent = "DESCARGAR TU PEDIDO";
   }
 }
 
 /* ---------- Eventos ---------- */
 const artDe = el => D.articulos.find(a => a.cod === el.closest(".art").dataset.cod);
 $("#catalogo").addEventListener("click", e => {
-  const f = e.target.closest(".flecha");
-  if (f){
-    const car = f.closest(".escala").querySelector(".carrusel");
-    car.scrollBy({left: Number(f.dataset.dir) * car.clientWidth, behavior: "smooth"});
+  const f = e.target.closest(".ficha-escala");
+  if (f){   // ficha blanca del título: pasa a la escala siguiente y, desde la última, vuelve a la primera
+    const escala = document.querySelector(`.escala[data-sec="${CSS.escape(f.dataset.sec)}"]`);
+    const car = escala.querySelector(".carrusel"), n = car.children.length;
+    const sig = ((diapoDe[f.dataset.sec] || 0) + 1) % n;
+    car.scrollTo({left: sig * car.clientWidth, behavior: "smooth"});
     return;
   }
   const b = e.target.closest("button[data-acc]"); if (!b) return;
@@ -776,9 +784,9 @@ $("#chips").addEventListener("click", e => {
 });
 $("#buscar").addEventListener("input", e => { filtroTxt = e.target.value; pintarCatalogo(); });
 $("#ver").addEventListener("click", () => { pintarResumen(); $("#hoja").classList.add("abierta"); $("#hoja").scrollTop = 0; document.body.style.overflow = "hidden"; });
-// Toto 19/11: sin botón arriba; se vuelve a la lista solo con "MODIFICAR PEDIDO" de abajo
+// Toto 19/11: se vuelve a la lista solo con "Modificar pedido" de ARRIBA (el de abajo era redundante)
 function cerrarHoja(){ $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; }
-$("#modificar").addEventListener("click", cerrarHoja);
+$("#cerrar").addEventListener("click", cerrarHoja);
 $("#pdf").addEventListener("click", descargarPdf);
 let vaciarArmado = null;
 $("#vaciar").addEventListener("click", () => {
