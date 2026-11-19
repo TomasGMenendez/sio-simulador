@@ -49,10 +49,11 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 .prov-cab h3{font-weight:900;font-size:15px;letter-spacing:.2px}
 .pill-roja{background:var(--rojo);color:var(--blanco);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 
-/* Escala (estética original de tabla). Al bajar, acompaña el scroll y se queda en el MEDIO de la pantalla mientras se recorre
-   ese proveedor (Toto 19/11). El "top" de cada tabla lo calcula ubicarEscalas() según su alto. */
-.escala{position:sticky;top:calc(var(--barra-alto,104px) + 8px);z-index:15;background:var(--blanco);
-  border:1.5px solid var(--negro);font-size:12.5px;box-shadow:0 6px 16px rgba(0,0,0,.22)}
+/* Escala (estética original de tabla). Al bajar, acompaña el scroll pegada debajo del buscador y se SUELTA a la mitad de la
+   lista de ese proveedor: queda ahí y la página sigue (Toto 19/11). Lo logra .mitad1, que envuelve la tabla y la primera
+   mitad de los artículos: una tabla sticky no puede salir de su contenedor. */
+.escala{position:sticky;top:calc(var(--barra-alto,104px) + env(safe-area-inset-top,0px));z-index:15;background:var(--blanco);
+  border:1.5px solid var(--negro);border-top:0;font-size:12.5px;box-shadow:0 6px 10px -8px rgba(0,0,0,.45)}
 .escala table{width:100%;border-collapse:collapse}
 .escala th{background:#222;color:var(--blanco);font-weight:700;text-align:left;padding:5px 10px;font-size:11.5px}
 .escala th:last-child,.escala td:last-child{text-align:right}
@@ -381,16 +382,6 @@ function tablaEscala(grupo){
   return `<div class="escala-bloque"><div class="escala-tit"><span>Escala por volumen · ${esc(r.etiqueta)}</span>${actual ? `<span class="logrado">Lograste -${pctTxt(actual)}</span>` : ""}</div><table><thead><tr><th>CONDICIÓN</th><th>DESCUENTO</th></tr></thead><tbody>${filas}</tbody></table></div>`;
 }
 
-// Cada tabla se queda centrada en la parte visible (entre el buscador y el total de abajo). Si es más alta que eso, va
-// pegada al buscador. Se recalcula al redibujar y al cambiar el tamaño de la pantalla.
-function ubicarEscalas(){
-  const arriba = $(".barra").offsetHeight, abajo = $(".pie").offsetHeight;
-  const libre = window.innerHeight - arriba - abajo;
-  for (const el of document.querySelectorAll(".escala")){
-    el.style.top = Math.round(arriba + Math.max(8, (libre - el.offsetHeight) / 2)) + "px";
-  }
-}
-
 function pintarCatalogo(){
   const txt = norm(filtroTxt.trim());
   let html = "";
@@ -404,12 +395,17 @@ function pintarCatalogo(){
     const conEscala = grupos.filter(g => D.reglas[g].escalones.length > 1 && arts.some(a => a.grupo === g && !a.sin_stock));
     html += `<section class="prov" id="cat-${esc(norm(cat).replace(/[^A-Z0-9]/g, "_"))}">
       <div class="prov-cab"><h3>${esc(cat)}</h3>${tope ? `<span class="pill-roja">hasta -${pctTxt(tope)}</span>` : ""}</div>
-      ${conEscala.length ? `<div class="escala">${conEscala.map(tablaEscala).join("")}</div>` : ""}
-      <div class="arts">${arts.map(filaArticulo).join("")}</div>
+      ${conEscala.length
+        ? (() => {   // la tabla acompaña solo la primera mitad de la lista (par, para no desarmar las 2 columnas de la PC)
+            const mitad = Math.max(1, Math.ceil(arts.length / 4) * 2);
+            return `<div class="mitad1"><div class="escala">${conEscala.map(tablaEscala).join("")}</div>
+              <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
+              <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
+          })()
+        : `<div class="arts">${arts.map(filaArticulo).join("")}</div>`}
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
-  ubicarEscalas();
 }
 
 function pintarPie(){
@@ -595,7 +591,7 @@ $("#vaciar").addEventListener("click", () => {
 
 /* ---------- Arranque ---------- */
 // La escala fija se apoya justo debajo del buscador: su alto cambia con el ancho (chips en 1 o 2 renglones).
-const fijarAltoBarra = () => { document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px"); ubicarEscalas(); };
+const fijarAltoBarra = () => document.documentElement.style.setProperty("--barra-alto", $(".barra").offsetHeight + "px");
 fijarAltoBarra();
 if (window.ResizeObserver) new ResizeObserver(fijarAltoBarra).observe($(".barra"));
 window.addEventListener("resize", fijarAltoBarra);
