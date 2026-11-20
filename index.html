@@ -141,6 +141,13 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 /* CANT. con su unidad (Toto 19/11): "2 packs" / "5 uni" / "1 pack" + "+ 7 uni", número en negrita */
 .tabla-res .cant{display:block;white-space:nowrap;font-weight:700;font-size:12px}
 .tabla-res .cant b{font-weight:900;font-size:14px}
+/* detalle del pedido ordenado: título por marca (y por calibre en Cunnington) */
+.tabla-res tr.grupo td{background:var(--negro);color:var(--amarillo);font-weight:900;font-size:12px;text-align:left;padding:6px 8px;letter-spacing:.3px}
+/* título de calibre dentro de una marca (Cunnington): ocupa las dos columnas en la compu */
+.cal-tit{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;background:var(--fondo);border-left:4px solid var(--amarillo);
+  border-bottom:1px solid var(--linea);padding:7px 10px;margin-top:10px;font-weight:900;font-size:13px;letter-spacing:.3px}
+.cal-tit small{font-weight:700;color:var(--gris);font-size:11.5px;letter-spacing:0}
+.arts>.cal-tit:first-child{margin-top:0}
 /* franja "lo que falta para el próximo descuento", pegada debajo del título de la marca (Toto 20/11) */
 .falta-tramo{position:relative;overflow:hidden;background:var(--amarillo);color:var(--negro);font-size:12.5px;font-weight:700;
   text-align:center;padding:6px 10px 8px;border-left:1.5px solid var(--negro);border-right:1.5px solid var(--negro)}
@@ -478,7 +485,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "0b56f82867";
+const VERSION_PAGINA = "50badcda18";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -656,6 +663,35 @@ function pctArticulo(a){
 }
 function maxPct(grupo){ return Math.max(0, ...D.reglas[grupo].escalones.map(e => e.pct)); }
 
+/* ---------- Orden y grupos (Toto 20/11: "todo de Cunnington separado primero por calibre" y el detalle del pedido igual) ---------- */
+// Marcas que se dividen en subgrupos: marca -> función(artículo) -> {orden, etiqueta}. Hoy solo Cunnington, por CALIBRE.
+const SUBGRUPOS = {CUNNINGTON: a => calibreCunnington(a)};
+function calibreCunnington(a){
+  const n = norm(a.nombre);
+  if (/BIDON|SIFON/.test(n)) return {orden: 90, etiqueta: "BIDÓN Y SIFÓN"};                     // no es Cunnington: va al final
+  let m = n.match(/(\d+)\s*X\s*([\d.,]+)\s*(?:LT|L)\b/);                                        // "4X3LT", "6X2,25LT", "6X1.5LT"
+  if (m){ const l = parseFloat(m[2].replace(",", ".")); return {orden: -l, etiqueta: `${String(l).replace(".", ",")} LITROS`}; }
+  m = n.match(/(\d+)\s*X\s*(\d+)\s*(?:CC|ML)\b/);                                               // "9X500CC", "9X500ML"
+  if (m) return {orden: -parseInt(m[2], 10) / 1000, etiqueta: `${m[2]} ML`};
+  return {orden: 99, etiqueta: "OTROS"};
+}
+// Orden de una marca: por subgrupo (el más grande primero), con stock antes que sin stock y por nombre; las demás marcas conservan
+// el orden de la lista con los sin stock al final (sort estable).
+function ordenMarca(cat, lista){
+  const sub = SUBGRUPOS[cat];
+  return [...lista].sort((x, y) => (sub ? sub(x).orden - sub(y).orden : 0) || (x.sin_stock ? 1 : 0) - (y.sin_stock ? 1 : 0)
+    || (sub ? x.nombre.localeCompare(y.nombre, "es", {numeric: true}) : 0));
+}
+let _orden = null;      // código -> posición en el catálogo (marcas en el orden de la lista; adentro, ordenMarca): el detalle del pedido sigue el mismo orden
+const ordenGlobal = () => {
+  if (_orden) return _orden;
+  _orden = new Map(); let i = 0;
+  for (const cat of D.categorias) for (const a of ordenMarca(cat, D.articulos.filter(x => x.cat === cat))) _orden.set(a.cod, i++);
+  return _orden;
+};
+// Título de grupo de un artículo en el detalle del pedido: "CUNNINGTON · 3 LITROS" o solo la marca
+const grupoDe = a => { const sub = SUBGRUPOS[a.cat]; return sub ? `${a.cat} · ${sub(a).etiqueta}` : a.cat; };
+
 function calcular(){
   const filas = []; let sin = 0, con = 0, packs = 0, sueltas = 0;
   for (const a of D.articulos){
@@ -665,6 +701,7 @@ function calcular(){
     const {pk, su} = partes(a, u);
     filas.push({a, u, pct, sin: s, con: c}); sin += s; con += c; packs += pk; sueltas += su;
   }
+  filas.sort((x, y) => ordenGlobal().get(x.a.cod) - ordenGlobal().get(y.a.cod));   // mismo orden que el catálogo (Tu pedido, PDF y mensaje)
   return {filas, sin, con, ahorro: sin - con, packs, sueltas};
 }
 
@@ -745,9 +782,13 @@ function pintarCatalogo(){
     if (filtroCat && cat !== filtroCat) continue;
     // Se busca por producto, código o MARCA (los clientes conocen la marca, no el proveedor)
     // Los SIN STOCK van al final de cada marca (Toto 20/11); sort es estable: el orden de la lista se mantiene dentro de cada grupo
-    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod + " " + a.cat).includes(txt)))
-      .sort((x, y) => (x.sin_stock ? 1 : 0) - (y.sin_stock ? 1 : 0));
+    const arts = ordenMarca(cat, D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod + " " + a.cat).includes(txt))));
     if (!arts.length) continue;
+    // Marcas con subgrupos (Cunnington por calibre): un título antes del primer artículo de cada uno
+    const subf = SUBGRUPOS[cat], titulos = new Map();
+    if (subf){ let ant = null; for (const a of arts){ const g = subf(a).etiqueta; if (g !== ant){ titulos.set(a.cod, {g, uni: a.uni}); ant = g; } } }
+    const fila = a => (titulos.has(a.cod) ? `<div class="cal-tit"><span>${esc(titulos.get(a.cod).g)}</span>${
+      titulos.get(a.cod).uni > 1 ? `<small>pack x${titulos.get(a.cod).uni}</small>` : ""}</div>` : "") + filaArticulo(a);
     const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
     const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
     // Todas las escalas del proveedor; primero la del grupo con más artículos (Cunnington antes que Bidón/Sifón)
@@ -769,10 +810,10 @@ function pintarCatalogo(){
             let mitad = Math.max(0, arts.length - 4);
             if (window.matchMedia("(min-width:900px)").matches) mitad -= mitad % 2;
             return `<div class="mitad1"><div class="fijo" data-sec="${esc(secId)}">${cab}${avisoTramo(conEscala)}<div class="plegable">${bloqueEscalas(secId, conEscala)}</div></div>
-              <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
-              <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
+              <div class="arts">${arts.slice(0, mitad).map(fila).join("")}</div></div>
+              <div class="arts">${arts.slice(mitad).map(fila).join("")}</div>`;
           })()
-        : `${cab}<div class="arts">${arts.map(filaArticulo).join("")}</div>`}
+        : `${cab}<div class="arts">${arts.map(fila).join("")}</div>`}
     </section>`;
   }
   $("#catalogo").innerHTML = html || `<p class="vacio">No encontramos productos con “${esc(filtroTxt)}”.</p>`;
@@ -962,12 +1003,17 @@ function pintarPie(){
 
 function pintarResumen(){
   const t = calcular();
-  $("#res-filas").innerHTML = t.filas.map((f, k) => `<tr style="animation-delay:${(0.12 + Math.min(k, 12) * 0.045).toFixed(3)}s">
+  let grupoAnt = null;
+  $("#res-filas").innerHTML = t.filas.map((f, k) => {
+    const g = grupoDe(f.a), titulo = g !== grupoAnt ? `<tr class="grupo"><td colspan="5">${esc(g)}</td></tr>` : "";   // ordenado: título por marca / calibre
+    grupoAnt = g;
+    return titulo + `<tr style="animation-delay:${(0.12 + Math.min(k, 12) * 0.045).toFixed(3)}s">
       <td class="fuerte">${cantCelda(f.a, f.u)}</td>
       <td class="izq">${esc(f.a.nombre)}${codVisible(f.a) ? `<span class="chico">Cód. ${esc(codVisible(f.a))}</span>` : ""}</td>
       <td>${p0(f.a.precio)}</td>
       <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
-      <td class="fuerte">${p0(f.con)}</td></tr>`).join("");
+      <td class="fuerte">${p0(f.con)}</td></tr>`;
+  }).join("");
   $("#res-ahorro").textContent = p0(t.ahorro);
   $("#res-total").textContent = p0(t.con);
   $("#consejos").innerHTML = consejos().map(c => `<div class="consejo">💡 ${c}</div>`).join("");
@@ -1043,11 +1089,14 @@ async function pdfMovil(jsPDF, t, logo, marca){
   const tmp = new jsPDF({unit: "pt", format: [W, 400]}); const F0 = await fuentePdf(tmp);
   // primero se miden las filas (el nombre puede ocupar 2 renglones)
   tmp.setFont(F0, "bold"); tmp.setFontSize(10.5);
-  const filas = t.filas.map(f => {
+  const filas = []; let grupoAnt = null;
+  for (const f of t.filas){
+    const g = grupoDe(f.a);
+    if (g !== grupoAnt){ filas.push({sec: g, alto: 20}); grupoAnt = g; }      // título de marca / calibre (el pedido va ordenado)
     let lineas = tmp.splitTextToSize(f.a.nombre, C2 - C1 - 14);
     if (lineas.length > 2){ lineas = lineas.slice(0, 2); lineas[1] = lineas[1].replace(/.{0,2}$/, "…"); }
-    return {f, lineas, alto: 14 + lineas.length * 12.5 + 12};
-  });
+    filas.push({f, lineas, alto: 14 + lineas.length * 12.5 + 12});
+  }
   const YT = 112, CAB = 24, yc = YT + CAB;
   const yp = yc + filas.reduce((s, x) => s + x.alto, 0);
   const alto = yp + 46 + 40;
@@ -1075,9 +1124,16 @@ async function pdfMovil(jsPDF, t, logo, marca){
   doc.text("ARTÍCULO", C1 + 8, YT + 15.5);
   doc.text("FINAL", (C2 + X1) / 2, YT + 15.5, {align: "center"});
   doc.setDrawColor(30, 30, 30); doc.setLineWidth(0.8);
+  doc.line(C1, yc, C1, yp); doc.line(C2, yc, C2, yp);     // las divisorias van ANTES de las filas: los títulos las tapan
   let y = yc;
-  for (const {f, lineas, alto: h} of filas){
+  for (const fila of filas){
+    const {f, lineas, alto: h} = fila;
     if (y > yc) doc.line(X0, y, X1, y);
+    if (fila.sec){
+      doc.setFillColor(0, 0, 0); doc.rect(X0, y, X1 - X0, h, "F");
+      doc.setTextColor(255, 215, 0); doc.setFont(F, "bold"); doc.setFontSize(9); doc.text(fila.sec, X0 + 8, y + h / 2 + 3.2);
+      y += h; continue;
+    }
     const medio = y + h / 2 + 4;
     // cantidad con su unidad ("2 packs", "5 uni", "1 pack" / "+ 7 uni"): achica la letra hasta que entra en la columna
     doc.setTextColor(0, 0, 0); doc.setFont(F, "bold");
@@ -1093,7 +1149,6 @@ async function pdfMovil(jsPDF, t, logo, marca){
     doc.text(p0(f.con), X1 - 8, medio, {align: "right"});
     y += h;
   }
-  doc.line(C1, yc, C1, yp); doc.line(C2, yc, C2, yp);
   // totales
   const b = yp + 30, total = p0(t.con);
   doc.setFont(F, "bold"); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
@@ -1126,9 +1181,11 @@ async function descargarPdf(){
     const YT = 131, CAB = 35, PIE = 35, POR_HOJA = 30;
     const d = new Date();
     const vig = String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(2);
-    const filas = t.filas;
+    const filas = []; let grupoAnt = null;
+    for (const f of t.filas){ const g = grupoDe(f.a); if (g !== grupoAnt){ filas.push({sec: g}); grupoAnt = g; } filas.push(f); }   // pedido ordenado, con títulos
     let hojas = [];
     for (let i = 0; i < filas.length; i += POR_HOJA) hojas.push(filas.slice(i, i + POR_HOJA));
+    for (let i = 0; i < hojas.length - 1; i++){ if (hojas[i].length && hojas[i][hojas[i].length - 1].sec) hojas[i + 1].unshift(hojas[i].pop()); }   // un título no queda solo al final de la hoja
     if (hojas.length > 1 && hojas[hojas.length - 1].length < 4){
       const mover = 4 - hojas[hojas.length - 1].length;
       hojas[hojas.length - 1] = hojas[hojas.length - 2].slice(-mover).concat(hojas[hojas.length - 1]);
@@ -1163,6 +1220,12 @@ async function descargarPdf(){
       doc.setTextColor(0, 0, 0);
       parte.forEach((f, i) => {
         const b = yc + i * af + af / 2 + 4.5;
+        if (f.sec){      // título de marca / calibre: franja negra con letra amarilla sobre toda la fila
+          doc.setFillColor(0, 0, 0); doc.rect(X0, yc + i * af, X1 - X0, af, "F");
+          doc.setTextColor(255, 215, 0); doc.setFont(F, "bold"); doc.setFontSize(12.5); doc.text(f.sec, X0 + 14, b);
+          doc.setTextColor(0, 0, 0);
+          return;
+        }
         // cantidad con su unidad ("2 packs", "5 uni", "1 pack" / "+ 7 uni"), achicando si no entra en la columna
         doc.setFont(F, "bold");
         const cl = cantLineas(f.a, f.u);
