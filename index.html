@@ -312,6 +312,26 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 .hoja{visibility:hidden;transform:translateY(100%);transition:transform .5s var(--hoja),visibility 0s linear .5s}
 .hoja.abierta{visibility:visible;transform:none;transition:transform .5s var(--hoja),visibility 0s}
 .hoja.abierta .tabla-res tbody tr{animation:subeFade .45s var(--suave) backwards}
+.hoja.abierta .tabla-res tbody.quieto tr{animation:none}
+/* "Tu pedido" editable (Toto 20/11): − / + y tachito debajo de cada artículo */
+.tabla-res tr.edita td{border-top:0;padding:0 8px 10px}
+.edita-in{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.edita-in .paso{background:var(--negro);color:var(--blanco)}
+.edita-in .paso button{width:32px;height:32px;font-size:19px}
+.edita-in .paso input{width:40px;height:32px;font-size:15px;color:var(--blanco)}
+.edita-in .paso-et{margin-left:4px}
+.quitar{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--linea);color:var(--gris);display:grid;place-items:center;margin-left:6px;background:var(--blanco)}
+.quitar:active{transform:scale(.88);color:var(--rojo);border-color:var(--rojo)}
+@media (max-width:480px){      /* celulares: PACKS + UNID. + tachito entran en una sola fila (390 px y 360 px) */
+  .edita-in{gap:4px}
+  .edita-in .paso button{width:28px}
+  .edita-in .paso input{width:32px}
+  .edita-in .paso-et{margin-left:2px;font-size:10px}
+  .quitar{margin-left:2px}
+}
+.tabla-res tr.saliendo{opacity:0;transition:opacity .22s ease}
+.tabla-res tr.cambia-fila td{animation:filaCambia .6s ease-out}
+@keyframes filaCambia{0%{background:var(--amarillo)}100%{background:transparent}}
 .hoja.abierta .ahorro{animation:subeFade .45s var(--suave) .22s backwards}
 .hoja.abierta .pastilla{animation:pop .55s var(--rebote) .2s backwards}
 .hoja.abierta .minimo:not([hidden]),.hoja.abierta .consejo{animation:subeFade .45s var(--suave) .3s backwards}
@@ -485,7 +505,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "9971210a2d";
+const VERSION_PAGINA = "f367eab75a";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -1035,8 +1055,22 @@ function pintarPie(){
   verAntes = hay;
 }
 
-function pintarResumen(){
+// Debajo de cada artículo de "Tu pedido": los mismos − / + de la lista y el tachito para quitarlo (Toto 20/11: "que puedan
+// modificar el pedido una vez que le den a terminar")
+const TACHO = `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2"
+  stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>`;
+function filaEditar(a, u){
+  const {pk, su} = partes(a, u);
+  const pasos = porUnidad(a) && a.uni > 1
+    ? `<span class="paso-et">PACKS</span>${paso(a, "p", pk, "Packs")}<span class="paso-et">UNID.</span>${paso(a, "u", su, "Unidades sueltas")}`
+    : `<span class="paso-et">PACKS</span>${paso(a, "p", pk, "Packs")}`;
+  return `<tr class="edita" data-cod="${esc(a.cod)}"><td colspan="5"><div class="edita-in">${pasos}
+    <button class="quitar" data-quitar aria-label="Quitar ${esc(a.nombre)} del pedido">${TACHO}</button></div></td></tr>`;
+}
+// quieto = se redibuja por un cambio de cantidad: sin la animación de entrada de las filas
+function pintarResumen(quieto = false){
   const t = calcular();
+  $("#res-filas").classList.toggle("quieto", quieto);
   let grupoAnt = null;
   $("#res-filas").innerHTML = t.filas.map((f, k) => {
     const g = grupoDe(f.a), titulo = g !== grupoAnt ? `<tr class="grupo"><td colspan="5">${esc(g)}</td></tr>` : "";   // ordenado: título por marca / calibre
@@ -1046,7 +1080,7 @@ function pintarResumen(){
       <td class="izq">${esc(f.a.nombre)}${codVisible(f.a) ? `<span class="chico">Cód. ${esc(codVisible(f.a))}</span>` : ""}</td>
       <td>${p0(f.a.precio)}</td>
       <td>${f.pct ? "-" + pctTxt(f.pct) : "-"}</td>
-      <td class="fuerte">${p0(f.con)}</td></tr>`;
+      <td class="fuerte">${p0(f.con)}</td></tr>` + filaEditar(f.a, f.u);
   }).join("");
   $("#res-ahorro").textContent = p0(t.ahorro);
   $("#res-total").textContent = p0(t.con);
@@ -1063,14 +1097,20 @@ const minimoCompra = () => Number(D.minimo_compra) || 0;
 
 function refrescar(){ pintarCatalogo(); pintarPie(); guardar(); }
 
+// Reglas de cantidad, las mismas en la lista y en "Tu pedido": sin venta por unidad, packs enteros; mínimo de venta de Chess
+// (19/11: fideos Sol Pampeano = 5 u.): subiendo salta al mínimo, bajando de él vuelve a 0.
+function ajustarU(a, u, antes){
+  u = Math.max(0, Math.min(9999 * a.uni, Math.floor(Number(u) || 0)));
+  if (!porUnidad(a)) return Math.round(u / a.uni) * a.uni;
+  if (a.min > 1 && u > 0 && u < a.min) return u > antes ? a.min : 0;
+  return u;
+}
+
 function cambiar(cod, u){            // u = unidades
   const a = D.articulos.find(x => x.cod === cod);
   if (!a || a.sin_stock) return;
   const antes = carrito[cod] || 0;
-  u = Math.max(0, Math.min(9999 * a.uni, Math.floor(Number(u) || 0)));
-  if (!porUnidad(a)) u = Math.round(u / a.uni) * a.uni;          // sin venta por unidad: packs enteros
-  // Mínimo de venta de Chess (19/11: fideos Sol Pampeano = 5 u.): subiendo salta al mínimo, bajando de él vuelve a 0
-  else if (a.min > 1 && u > 0 && u < a.min) u = u > antes ? a.min : 0;
+  u = ajustarU(a, u, antes);
   const pctAntes = pctGrupos();                                   // para animar solo lo que cambie con este toque
   // La fila que se tocó tiene que quedar QUIETA bajo el dedo: al redibujar, la tabla de arriba puede cambiar de alto
   // (otra escala, "Lograste", plegada o no) y empujaría todo. Se mide antes y después y se compensa el scroll (19/11).
@@ -1359,7 +1399,7 @@ $("#chips").addEventListener("click", e => {
 });
 $("#buscar").addEventListener("input", e => { filtroTxt = e.target.value; pintarCatalogo(); });
 $("#ver").addEventListener("click", () => {
-  pintarResumen(); const t = calcular();
+  pintarResumen(false); const t = calcular();
   $("#hoja").scrollTop = 0; $("#hoja").classList.add("abierta"); document.body.style.overflow = "hidden";
   contar($("#res-total"), t.con, 900, 0); contar($("#res-ahorro"), t.ahorro, 900, 0);   // los totales cuentan desde $0
 });
@@ -1370,6 +1410,45 @@ $("#enviar").addEventListener("click", e => {
 // Toto 19/11: se vuelve a la lista solo con "Modificar pedido" de ARRIBA (el de abajo era redundante)
 function cerrarHoja(){ $("#hoja").classList.remove("abierta"); document.body.style.overflow = ""; }
 $("#cerrar").addEventListener("click", cerrarHoja);
+// Cambiar cantidades en "Tu pedido": mismas reglas que la lista; total, ahorro, mínimo y consejos se recalculan en el acto
+function cambiarEnResumen(a, u){
+  const antes = carrito[a.cod] || 0;
+  u = ajustarU(a, u, antes);
+  if (u === antes){ pintarResumen(true); return; }                  // nada cambió (ej. bajo el mínimo): repone el número
+  const viejo = calcular();
+  const aplicar = () => {
+    if (u) carrito[a.cod] = u; else delete carrito[a.cod];
+    refrescar();                                                    // la lista y el pie quedan igual que "Tu pedido"
+    if (!Object.keys(carrito).length){ cerrarHoja(); return; }      // se quitó lo último: vuelve a la lista
+    pintarResumen(true);
+    const t = calcular();
+    contar($("#res-total"), t.con, 450, viejo.con); contar($("#res-ahorro"), t.ahorro, 450, viejo.ahorro);
+    const fila = $("#res-filas").querySelector(`tr.edita[data-cod="${CSS.escape(a.cod)}"]`);
+    if (fila && !reducido()){ reanimar(fila.previousElementSibling, "cambia-fila"); for (const i of fila.querySelectorAll("input")) reanimar(i, "golpe"); }
+  };
+  if (u || reducido()) return aplicar();
+  // se quita: las dos filas del artículo se desvanecen y recién ahí se redibuja
+  const edita = $("#res-filas").querySelector(`tr.edita[data-cod="${CSS.escape(a.cod)}"]`);
+  for (const tr of [edita?.previousElementSibling, edita]) tr?.classList.add("saliendo");
+  setTimeout(aplicar, 230);
+}
+const artResumen = el => D.articulos.find(x => x.cod === el.closest("tr.edita")?.dataset.cod);
+$("#res-filas").addEventListener("click", e => {
+  const a = artResumen(e.target); if (!a) return;
+  const u = carrito[a.cod] || 0, {pk} = partes(a, u);
+  if (e.target.closest("[data-quitar]")){ cambiarEnResumen(a, 0); return; }
+  const b = e.target.closest("button[data-acc]"); if (!b) return;
+  const [tipo, signo] = b.dataset.acc;                      // "p+", "p-", "u+", "u-"
+  if (tipo === "p" && signo === "-" && !pk) return;         // sin packs: el − de packs no borra las unidades sueltas
+  cambiarEnResumen(a, u + (signo === "+" ? 1 : -1) * (tipo === "p" ? a.uni : 1));
+});
+$("#res-filas").addEventListener("change", e => {
+  if (!e.target.matches(".paso input")) return;
+  const a = artResumen(e.target); if (!a) return;
+  const {pk, su} = partes(a, carrito[a.cod] || 0), v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+  cambiarEnResumen(a, e.target.dataset.tipo === "u" ? pk * a.uni + v : v * a.uni + su);
+});
+$("#res-filas").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.matches(".paso input")) e.target.blur(); });
 $("#pdf").addEventListener("click", descargarPdf);
 let vaciarArmado = null;
 $("#vaciar").addEventListener("click", () => {
