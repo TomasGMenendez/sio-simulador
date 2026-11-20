@@ -478,7 +478,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "02a1039161";
+const VERSION_PAGINA = "24f453f667";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -744,7 +744,9 @@ function pintarCatalogo(){
   for (const cat of D.categorias){
     if (filtroCat && cat !== filtroCat) continue;
     // Se busca por producto, código o MARCA (los clientes conocen la marca, no el proveedor)
-    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod + " " + a.cat).includes(txt)));
+    // Los SIN STOCK van al final de cada marca (Toto 20/11); sort es estable: el orden de la lista se mantiene dentro de cada grupo
+    const arts = D.articulos.filter(a => a.cat === cat && (!txt || norm(a.nombre + " " + a.cod + " " + a.cat).includes(txt)))
+      .sort((x, y) => (x.sin_stock ? 1 : 0) - (y.sin_stock ? 1 : 0));
     if (!arts.length) continue;
     const grupos = [...new Set(arts.map(a => a.grupo).filter(Boolean))];
     const tope = grupos.length ? Math.max(...grupos.map(maxPct)) : 0;
