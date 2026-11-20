@@ -485,7 +485,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "424a1513b0";
+const VERSION_PAGINA = "9971210a2d";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -1197,6 +1197,19 @@ async function pdfMovil(jsPDF, t, logo, marca){
   return doc;
 }
 
+// DESCARGAR guarda el archivo en el celular, no lo abre en pantalla (Toto 20/11). El PDF va como archivo "binario"
+// (application/octet-stream): el navegador lo guarda en Descargas en vez de mostrarlo (en iPhone, Safari pregunta una vez
+// "¿Descargar?", eso no se puede saltear); el nombre .pdf hace que después se abra como PDF. El Chrome de iPhone (CriOS) no
+// guarda archivos armados en la página: ahí queda el save() de jsPDF de siempre.
+const nombrePdf = () => `Simulacion_SIO_${new Date().toISOString().slice(0, 10)}.pdf`;
+function guardarPdf(doc){
+  if (/CriOS\//.test(navigator.userAgent)){ doc.save(nombrePdf()); return; }
+  const url = URL.createObjectURL(new Blob([doc.output("arraybuffer")], {type: "application/octet-stream"}));
+  const a = Object.assign(document.createElement("a"), {href: url, download: nombrePdf(), rel: "noopener"});
+  a.style.display = "none"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 async function descargarPdf(){
   const t = calcular(); if (!t.filas.length) return;
   const boton = $("#pdf"), rotulo = boton.querySelector("span"); boton.disabled = true; rotulo.textContent = "Armando el PDF…";
@@ -1207,7 +1220,7 @@ async function descargarPdf(){
     // Celular / pantalla angosta: PDF vertical y angosto, que se lee sin hacer zoom (Toto 19/11). PC: el apaisado de siempre.
     if (window.matchMedia("(max-width: 700px)").matches){
       const doc = await pdfMovil(jsPDF, t, logo, marca);
-      doc.save(`Simulacion_SIO_${new Date().toISOString().slice(0, 10)}.pdf`);
+      guardarPdf(doc);
       return;
     }
     const ANCHO = 963, X0 = 63, X1 = 870, COLS = [63, 154, 449, 580, 733, 870];
@@ -1290,7 +1303,7 @@ async function descargarPdf(){
       doc.setTextColor(74, 74, 74); doc.setFont(F, "normal"); doc.setFontSize(14);
       doc.text("Precios vigentes hasta " + vig, X1, yf + 22 + 4, {align: "right"});
     }
-    doc.save(`Simulacion_SIO_${new Date().toISOString().slice(0, 10)}.pdf`);
+    guardarPdf(doc);
   } catch (e) {
     alert("No se pudo armar el PDF. Probá de nuevo o mandá el pedido por WhatsApp.");
   } finally {
