@@ -478,7 +478,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "24f453f667";
+const VERSION_PAGINA = "0b56f82867";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -1007,13 +1007,17 @@ function cambiar(cod, u){            // u = unidades
 }
 
 /* ---------- WhatsApp ---------- */
+// FORMATO FIJO: lo lee un BOT (chess-bot/pedido_tienda.py, lectura estricta; Toto 20/11: "super preciso"). No cambiar la forma sin
+// cambiar también ese lector: cada renglón es "• N packs | M uni | N pack + M uni NOMBRE (código)", y la línea 📦 son los totales de
+// control (suma de packs + suma de unidades · cantidad de artículos). Sin precios por renglón.
 function mensaje(){
   const t = calcular();
-  const hoy = new Date().toLocaleDateString("es-AR");
-  const lineas = t.filas.map(f => `• ${cantTxt(f.a, f.u)} ${f.a.nombre}${codVisible(f.a) ? ` (${codVisible(f.a)})` : ""}${f.pct ? ` -${pctTxt(f.pct)}` : ""} ${p0(f.con)}`);
-  return ["Hola! Armé este pedido en el simulador de SIO GLOBAL:", "", ...lineas, "",
-    `*Total: ${p0(t.con)}*`, t.ahorro >= 1 ? `Ahorro: ${p0(t.ahorro)}` : null,
-    `(${totTxt(t.packs, t.sueltas)} · precios de lista general del ${hoy})`].filter(x => x !== null).join("\n");
+  const lineas = t.filas.map(f => `• ${cantTxt(f.a, f.u)} ${f.a.nombre}${codVisible(f.a) ? ` (${codVisible(f.a)})` : ""}`);
+  const cant = [t.packs && txtPacks(t.packs), t.sueltas && `${t.sueltas} uni`].filter(Boolean).join(" + ");
+  const n = t.filas.length;
+  return ["🛒 *Pedido desde la tienda virtual*", "", ...lineas, "",
+    `📦 *${cant} · ${n} artículo${n === 1 ? "" : "s"}*`, `💰 *Total: ${p0(t.con)}*`,
+    t.ahorro >= 1 ? `✅ Ahorro: ${p0(t.ahorro)}` : null].filter(x => x !== null).join("\n");
 }
 
 /* ---------- PDF (misma estética que la simulación del CRM) ---------- */
