@@ -141,6 +141,12 @@ section.prov{margin-top:18px;scroll-margin-top:calc(var(--barra-alto,104px) + 8p
 /* CANT. con su unidad (Toto 19/11): "2 packs" / "5 uni" / "1 pack" + "+ 7 uni", número en negrita */
 .tabla-res .cant{display:block;white-space:nowrap;font-weight:700;font-size:12px}
 .tabla-res .cant b{font-weight:900;font-size:14px}
+/* franja "lo que falta para el próximo descuento", pegada debajo del título de la marca (Toto 20/11) */
+.falta-tramo{position:relative;overflow:hidden;background:var(--amarillo);color:var(--negro);font-size:12.5px;font-weight:700;
+  text-align:center;padding:6px 10px 8px;border-left:1.5px solid var(--negro);border-right:1.5px solid var(--negro)}
+.falta-tramo b{font-weight:900}
+.falta-tramo i{position:absolute;left:0;bottom:0;height:3px;background:var(--negro);transition:width .5s var(--suave)}
+.falta-tramo.listo{background:#FFF3B0}
 .totales{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
 .ahorro{font-weight:700;font-size:16px}
 .pastilla{background:var(--negro);color:var(--blanco);border-radius:999px;padding:10px 22px;font-weight:900;font-size:19px;display:flex;gap:18px}
@@ -472,7 +478,7 @@ header.cab{animation:bajaFade .5s var(--suave) backwards}
 <script>
 "use strict";
 // Versión de esta página: la escribe publicar_datos.py al publicar ("dev" = copia de prueba, no se chequea). Ver el arranque.
-const VERSION_PAGINA = "c3baa5cdfc";
+const VERSION_PAGINA = "02a1039161";
 let D = null;                       // datos.json
 const carrito = {};                 // cod -> UNIDADES (19/11: algunos artículos se cargan también por unidad suelta)
 let filtroCat = null, filtroTxt = "";
@@ -760,7 +766,7 @@ function pintarCatalogo(){
             // En la PC (2 columnas) el corte va entre filas completas, para no desarmar las columnas: últimos 4 o 5.
             let mitad = Math.max(0, arts.length - 4);
             if (window.matchMedia("(min-width:900px)").matches) mitad -= mitad % 2;
-            return `<div class="mitad1"><div class="fijo" data-sec="${esc(secId)}">${cab}<div class="plegable">${bloqueEscalas(secId, conEscala)}</div></div>
+            return `<div class="mitad1"><div class="fijo" data-sec="${esc(secId)}">${cab}${avisoTramo(conEscala)}<div class="plegable">${bloqueEscalas(secId, conEscala)}</div></div>
               <div class="arts">${arts.slice(0, mitad).map(filaArticulo).join("")}</div></div>
               <div class="arts">${arts.slice(mitad).map(filaArticulo).join("")}</div>`;
           })()
@@ -850,6 +856,26 @@ function revisarPlegado(){
     if (bajando && !plegadoDe[sec] && (abiertoEn[sec] === undefined || y - abiertoEn[sec] > 140)) plegar(fijo, true);
   }
   ultimoY = y;
+}
+
+/* ---------- Lo que falta para el próximo descuento (Toto 20/11) ---------- */
+// Franja amarilla pegada debajo del título de la marca. Si la escala con productos no es la principal (Bidón y Sifón
+// dentro de Cunnington), la nombra para que no parezca la de la marca.
+function avisoTramo(gs){
+  for (const [k, g] of gs.entries()){
+    const r = D.reglas[g], t = totalesGrupo(g);
+    if (!t.unidades) continue;                                   // de esta escala todavía no cargó nada
+    const actual = pctPara(r.escalones, t.packs, t.unidades);
+    const sig = r.escalones.filter(e => e.pct > actual)
+      .map(e => ({e, tengo: e.tipo === "p" ? t.packs : t.unidades}))
+      .map(x => ({...x, falta: x.e.desde - x.tengo})).filter(x => x.falta > 0).sort((x, y) => x.e.pct - y.e.pct)[0];
+    if (!sig) return `<div class="falta-tramo listo">🏆 ¡Llegaste al máximo: <b>-${pctTxt(actual)}</b>${k ? ` de ${esc(lindo(tituloEscala(g)).replace(/ Y /g, " y "))}` : ""}!</div>`;
+    const cuanto = sig.e.tipo === "p" ? txtPacks(sig.falta) : `${sig.falta} uni`;
+    const avance = Math.max(4, Math.min(100, sig.tengo / sig.e.desde * 100));
+    const de = k ? ` de ${esc(lindo(tituloEscala(g)).replace(/ Y /g, " y "))}` : "";
+    return `<div class="falta-tramo">🔥 Sumá <b>${cuanto} más</b> y pasás al <b>-${pctTxt(sig.e.pct)}</b>${de}<i style="width:${avance.toFixed(0)}%"></i></div>`;
+  }
+  return "";
 }
 
 /* ---------- Carrusel de escalas ---------- */
